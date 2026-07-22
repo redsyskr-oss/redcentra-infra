@@ -1,0 +1,25 @@
+릴리스 버전: 2026.07.22-1
+대상 플랫폼: linux/amd64
+작성 일시: 2026-07-22
+Compose 파일 버전: 1
+
+인프라 이미지:
+- nginx:1.30.3
+- rabbitmq:3.13-management-alpine
+- mariadb:11.8.8-noble
+- redis:7-alpine
+- opensearchproject/opensearch:3.7.0
+- chrislusf/seaweedfs:4.39
+- redcentra/grafana-oss:13.0.2-opensearch
+
+애플리케이션 이미지:
+- redcentra-api:0.1.0
+- redcentra-frontend:별도 확정 필요
+
+이미지 아카이브:
+- images/infra-images.tar
+- images/frontend-image.tar
+- images/api-server-image.tar
+
+주의: 반입 전에 실제 이미지 태그와 RepoDigest를 이 파일에 기록한다.
+

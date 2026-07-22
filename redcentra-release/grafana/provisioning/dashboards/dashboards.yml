@@ -1,0 +1,16 @@
+# 대시보드 JSON 자동 프로비저닝 — 이 디렉터리(/etc/grafana/provisioning/dashboards)에
+# 놓인 *.json 파일을 컨테이너 기동 시 자동으로 로드한다. UI에서 수정해도
+# allowUiUpdates 덕분에 저장은 되지만, 컨테이너를 재기동하면 이 파일 내용으로
+# 되돌아간다 — 대시보드를 영구히 바꾸려면 이 JSON 파일 자체를 고칠 것.
+apiVersion: 1
+
+providers:
+  - name: default
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

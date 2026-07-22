@@ -1,0 +1,54 @@
+# Grafana 프로비저닝 — 컨테이너 기동 시 자동으로 OpenSearch 데이터소스를 등록한다.
+# 컨테이너 간 통신이므로 url은 localhost가 아니라 서비스명(opensearch)을 쓴다
+# (docker-compose.yml의 redcentra-network 안에서 opensearch:9200으로 resolve됨).
+#
+# common 모듈의 logback/opensearch-appender.xml이 심는 인덱스 패턴(app-log-yyyy.MM.dd)과
+# 필드명(@timestamp/message/level/service)이 아래 jsonData와 반드시 일치해야 한다 —
+# 둘 중 하나만 바꾸면 Grafana에서 로그가 안 보이니 같이 수정할 것.
+# api-server뿐 아니라 common을 의존하는 다른 JVM 서비스(mq-worker 등)도 같은
+# app-log-* 인덱스에 쌓인다 — "service" 필드(spring.application.name)로 서비스별 필터링.
+apiVersion: 1
+
+datasources:
+  - name: OpenSearch - app-log
+    uid: opensearch-app-log
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    isDefault: true
+    editable: true
+    jsonData:
+      flavor: opensearch
+      version: "3.7.0" # 실제 기동된 OpenSearch 버전과 다르면 GET http://localhost:9200 응답 참고해 맞출 것
+      database: "app-log-*"
+      timeField: "@timestamp"
+      logMessageField: message
+      logLevelField: level
+      pplEnabled: true
+      serverless: false
+      maxConcurrentShardRequests: 5
+      timeInterval: 10s
+
+  # API 접근 로그(ApiAccessLogFilter) 전용 인덱스 — app-log-*(일반 로그)와 섞이지 않도록
+  # common/logback/opensearch-appender.xml의 API_ACCESS_LOG_OPENSEARCH 어펜더가 별도로
+  # api-access-log-yyyy.MM.dd에 색인한다. 필드(ip/httpMethod/requestUri/queryString/
+  # httpStatus/exceptionName/exceptionMessage/durationMs/memberId)는 ApiAccessLogFilter가
+  # MDC로 심은 값 그대로 OpenSearchAppender가 JSON 최상위 필드로 실어준다.
+  - name: OpenSearch - api-access-log
+    uid: opensearch-api-access-log
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    isDefault: false
+    editable: true
+    jsonData:
+      flavor: opensearch
+      version: "3.7.0"
+      database: "api-access-log-*"
+      timeField: "@timestamp"
+      logMessageField: message
+      logLevelField: level
+      pplEnabled: true
+      serverless: false
+      maxConcurrentShardRequests: 5
+      timeInterval: 10s

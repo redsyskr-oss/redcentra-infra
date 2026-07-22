@@ -1,0 +1,7 @@
+.env
+images/*.tar
+nginx/certs/*
+!nginx/certs/.gitkeep
+nginx/logs/*
+!nginx/logs/.gitkeep
+

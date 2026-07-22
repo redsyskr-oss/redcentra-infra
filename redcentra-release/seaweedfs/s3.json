@@ -1,0 +1,21 @@
+{
+  "identities": [
+    {
+      "name": "openrack-local",
+      "credentials": [
+        {
+          "accessKey": "local-access-key",
+          "secretKey": "local-secret-key"
+        }
+      ],
+      "actions": [
+        "Read",
+        "Write",
+        "List",
+        "Tagging",
+        "Admin"
+      ]
+    }
+  ]
+}
+
