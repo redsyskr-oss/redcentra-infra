@@ -1,6 +1,6 @@
 // json-server 목업 데이터 생성 스크립트.
 // 실행: node server/seed.mjs  →  server/db.json 생성
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -630,6 +630,17 @@ const db = {
   dashboardSummary,
 };
 
-writeFileSync(join(__dirname, 'db.json'), JSON.stringify(db, null, 2), 'utf-8');
+// 이 시드가 생성하지 않는 컬렉션(networkDiagrams, upsStatus, envSensors, leakSensors,
+// networkTraffic, securitySettings 등)은 기존 db.json에서 그대로 보존한다.
+// 재시드할 때마다 대시보드 위젯/보안 설정 데이터가 유실되는 것을 막기 위함.
+const dbPath = join(__dirname, 'db.json');
+if (existsSync(dbPath)) {
+  const previous = JSON.parse(readFileSync(dbPath, 'utf-8'));
+  const preserved = Object.keys(previous).filter((key) => !(key in db));
+  for (const key of preserved) db[key] = previous[key];
+  if (preserved.length) console.log('기존 db.json에서 보존:', preserved.join(', '));
+}
+
+writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf-8');
 console.log('server/db.json 생성 완료');
 console.log(Object.fromEntries(Object.entries(db).map(([k, v]) => [k, Array.isArray(v) ? v.length : 1])));
