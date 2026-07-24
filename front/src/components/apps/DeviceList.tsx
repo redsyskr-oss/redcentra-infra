@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef, RowSelectionState } from '@tanstack/react-table';
 import { CheckCircle2, ClipboardCheck, Download, PackageCheck, Search } from 'lucide-react';
@@ -139,11 +139,14 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
     hostName: '', bizName: '', osVersion: '', receivedAt: new Date().toISOString().slice(0, 10),
   });
 
-  useEffect(() => {
-    if (data?.action !== 'receive' || !data.modelId) return;
+  // data(요청 식별자)가 바뀔 때만 폼을 리셋한다. useEffect 대신 렌더 중 상태 조정 패턴을 쓴다
+  // (React 공식 권장: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
+  const [handledRequestId, setHandledRequestId] = useState(data?.requestId);
+  if (data?.action === 'receive' && data.modelId && data.requestId !== handledRequestId) {
+    setHandledRequestId(data.requestId);
     setForm((current) => ({ ...current, productModelId: String(data.modelId) }));
     setAssetOpen(true);
-  }, [data?.action, data?.modelId, data?.requestId]);
+  }
 
   const { data: devices = [], isLoading } = useQuery<Device[]>({
     queryKey: ['devices', 'list'],

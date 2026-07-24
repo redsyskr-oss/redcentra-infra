@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx-js-style';
 import {
@@ -292,6 +292,10 @@ export default function ProductModel({ data: _data }: { data?: unknown }) {
   const selectedDevices = selectedModel
     ? devices.filter((device) => device.productModelId === selectedModel.id || (!device.productModelId && device.modelName === selectedModel.modelName))
     : [];
+  const handleReceiveAsset = useCallback(() => {
+    if (!selectedModel) return;
+    openTab(`AST_ASSET_RECEIVE_${selectedModel.id}`, '자산 입고 등록', { action: 'receive', modelId: selectedModel.id, requestId: Date.now() }, 'PackageCheck');
+  }, [selectedModel, openTab]);
   const companyById = new Map(companies.map((company) => [company.id, company.companyName]));
   const templatesForModel = portTemplates.filter((template) => template.productModelId === selectedModelId);
   const resolvedPortCount = (model: ProductModelRow) => {
@@ -737,7 +741,7 @@ export default function ProductModel({ data: _data }: { data?: unknown }) {
                         <Button
                           size="sm"
                           className="bg-blue-600 text-white hover:bg-blue-500"
-                          onClick={() => openTab(`AST_ASSET_RECEIVE_${selectedModel.id}`, '자산 입고 등록', { action: 'receive', modelId: selectedModel.id, requestId: Date.now() }, 'PackageCheck')}
+                          onClick={handleReceiveAsset}
                         >
                           <Package className="mr-1 h-3.5 w-3.5" />이 모델로 자산 입고
                         </Button>

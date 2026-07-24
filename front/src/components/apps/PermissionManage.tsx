@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Lock, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -82,17 +82,26 @@ export default function PermissionManage({ data: _data }: { data?: unknown }) {
     return m;
   }, [menuRoles, selectedRoleId]);
 
-  // 역할 변경 시 로컬 상태 초기화
-  useEffect(() => {
-    if (!selectedRoleId) return;
-    const next = new Map<number, Perm>();
-    for (const m of menus.filter((x) => x.menuType === 'SUB')) {
-      const p = permByMenuIdForRole.get(m.id);
-      next.set(m.id, { canRead: p?.canRead ?? false, canWrite: p?.canWrite ?? false, canDelete: p?.canDelete ?? false });
+  // 역할 변경(또는 menus/menuRoles 비동기 로딩 완료) 시 로컬 상태 초기화.
+  // useEffect 대신 렌더 중 상태 조정 패턴을 쓴다
+  // (React 공식 권장: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
+  const [prevSelectedRoleId, setPrevSelectedRoleId] = useState(selectedRoleId);
+  const [prevMenus, setPrevMenus] = useState(menus);
+  const [prevPermByMenuId, setPrevPermByMenuId] = useState(permByMenuIdForRole);
+  if (selectedRoleId !== prevSelectedRoleId || menus !== prevMenus || permByMenuIdForRole !== prevPermByMenuId) {
+    setPrevSelectedRoleId(selectedRoleId);
+    setPrevMenus(menus);
+    setPrevPermByMenuId(permByMenuIdForRole);
+    if (selectedRoleId) {
+      const next = new Map<number, Perm>();
+      for (const m of menus.filter((x) => x.menuType === 'SUB')) {
+        const p = permByMenuIdForRole.get(m.id);
+        next.set(m.id, { canRead: p?.canRead ?? false, canWrite: p?.canWrite ?? false, canDelete: p?.canDelete ?? false });
+      }
+      setLocalPerm(next);
+      setDirty(new Set());
     }
-    setLocalPerm(next);
-    setDirty(new Set());
-  }, [selectedRoleId, menus, permByMenuIdForRole]);
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { ThreeEvent, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -623,7 +623,7 @@ export interface CameraRigProps {
 
 export function CameraRig({ rackPos, overviewPos = null, faceSide = 'front', resetKey = 0, dashboardMode = false }: CameraRigProps) {
   const { camera } = useThree();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const isAnimating = useRef(false);
   const destCam    = useRef(new THREE.Vector3(0, 10, 13));
   const destTarget = useRef(new THREE.Vector3(0, 0.8, 0));
@@ -651,7 +651,7 @@ export function CameraRig({ rackPos, overviewPos = null, faceSide = 'front', res
     if (!isAnimating.current || !controlsRef.current) return;
 
     const camDist    = camera.position.distanceTo(destCam.current);
-    const targetDist = (controlsRef.current.target as THREE.Vector3).distanceTo(destTarget.current);
+    const targetDist = controlsRef.current.target.distanceTo(destTarget.current);
 
     if (camDist < 0.005 && targetDist < 0.005) {
       isAnimating.current = false;
@@ -659,7 +659,7 @@ export function CameraRig({ rackPos, overviewPos = null, faceSide = 'front', res
     }
 
     camera.position.lerp(destCam.current, 0.08);
-    (controlsRef.current.target as THREE.Vector3).lerp(destTarget.current, 0.08);
+    controlsRef.current.target.lerp(destTarget.current, 0.08);
     controlsRef.current.update();
   });
 

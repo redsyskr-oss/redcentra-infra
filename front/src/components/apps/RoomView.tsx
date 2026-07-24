@@ -80,9 +80,12 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
     enabled: !!roomId,
   });
 
-  // API 데이터가 로드되면 랙 상태 초기화
-  useEffect(() => {
-    if (!roomRacks) return;
+  // API 데이터가 로드되면 랙 상태 초기화 (이후 racks는 이동/추가/삭제 도구로 로컬 편집되는 작업본).
+  // useEffect 대신 렌더 중 상태 조정 패턴을 쓴다
+  // (React 공식 권장: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
+  const [handledRoomRacks, setHandledRoomRacks] = useState(roomRacks);
+  if (roomRacks && roomRacks !== handledRoomRacks) {
+    setHandledRoomRacks(roomRacks);
     setRacks(roomRacks.map(r => ({
       id:       String(r.id),
       name:     r.rackName,
@@ -91,7 +94,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
       unitSize: r.totalUnit,
       status:   'ACTIVE' as RackStatus,
     })));
-  }, [roomRacks]);
+  }
 
   const selectedRack = useMemo(
     () => racks.find(r => r.id === selectedId) ?? null,
@@ -256,9 +259,12 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   );
 
   const dashboardPageCount = Math.max(1, Math.ceil(racks.length / 3));
+  // racks가 줄어 dashboardPageCount가 작아지면 dashboardPage가 범위를 벗어날 수 있으므로,
+  // 별도 클램프 useEffect 없이 렌더 중 나머지 연산으로 항상 유효한 페이지를 도출한다.
+  const safeDashboardPage = dashboardPage % dashboardPageCount;
   const dashboardRacks = useMemo(
-    () => racks.slice(dashboardPage * 3, dashboardPage * 3 + 3).map((rack, index) => ({ ...rack, posX: index + 1, posY: 1 })),
-    [racks, dashboardPage],
+    () => racks.slice(safeDashboardPage * 3, safeDashboardPage * 3 + 3).map((rack, index) => ({ ...rack, posX: index + 1, posY: 1 })),
+    [racks, safeDashboardPage],
   );
 
   useEffect(() => {
@@ -266,10 +272,6 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
     const timer = window.setInterval(() => setDashboardPage((page) => (page + 1) % dashboardPageCount), 5000);
     return () => window.clearInterval(timer);
   }, [dashboardMode, dashboardPageCount]);
-
-  useEffect(() => {
-    if (dashboardPage >= dashboardPageCount) setDashboardPage(0);
-  }, [dashboardPage, dashboardPageCount]);
 
   // 랙 온도 표시용 환경센서 (방 단위로만 존재 — 랙 순번으로 결정적으로 하나씩 배정)
   const { data: envSensors = [] } = useQuery({
@@ -563,7 +565,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
           <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 backdrop-blur">
             <span className="mr-1 text-[10px] text-slate-400">5초 자동 전환</span>
             {Array.from({ length: dashboardPageCount }, (_, index) => (
-              <span key={index} className={`h-1.5 rounded-full transition-all ${index === dashboardPage ? 'w-5 bg-cyan-300' : 'w-1.5 bg-slate-600'}`} />
+              <span key={index} className={`h-1.5 rounded-full transition-all ${index === safeDashboardPage ? 'w-5 bg-cyan-300' : 'w-1.5 bg-slate-600'}`} />
             ))}
           </div>
         )}
