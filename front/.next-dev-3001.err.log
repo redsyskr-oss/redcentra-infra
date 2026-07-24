@@ -1,2 +1,0 @@
-$ next dev -p 9000 "--port" "3001"
-⨯ Unable to acquire lock at D:\redcentra\front\.next\dev\lock, is another instance of next dev running?
