@@ -5,12 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   MousePointer2, Cable, Boxes, Trash2, Save, FilePlus2, Pencil,
   Search, CircleDot, WandSparkles,
-  type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useUser } from '@/hooks/useUser';
 import { cn } from '@/lib/utils';
 import {
@@ -18,84 +14,22 @@ import {
   type NodeType, type DiagramNode, type DiagramLink, type DiagramZone, type DiagramState,
 } from '@/lib/networkDiagram';
 import { apiFetch } from '@/lib/api';
+import {
+  ApiCableLink, ApiDevice, ApiDiagramRow, ApiRackDetail, ApiRoom, EMPTY_DIAGRAM, LINE_COLORS,
+  Mode, NODE_H, NODE_W, PendingLink, Selected, nodeTypeForDevice,
+} from './network-diagram-editor/types';
+import { ToolBtn } from './network-diagram-editor/ToolBtn';
+import { NodeEditDialog } from './network-diagram-editor/NodeEditDialog';
+import { ZoneEditDialog } from './network-diagram-editor/ZoneEditDialog';
+import { LinkCreateDialog } from './network-diagram-editor/LinkCreateDialog';
 
 /** 네트워크 구성도 편집기 — 사용자가 자신의 조직 네트워크망을 직접 그려서 저장한다.
  * 저장된 구성도는 대시보드 위젯에서 그대로 불러와 장애 알람과 연동해 보여준다.
  * 노드 타입/아이콘 정의는 @/lib/networkDiagram에서 대시보드 위젯과 공유한다. */
 export type { DiagramNode, DiagramLink, DiagramZone, DiagramState };
 
-interface ApiDiagramRow extends DiagramState { id: number; companyId: number; name: string; updatedAt: string; }
-
-const EMPTY_DIAGRAM: DiagramState = { nodes: [], links: [], zones: [] };
-
-const LINE_COLORS = ['#35e0c8', '#ffb03a', '#ff5f7a', '#7ad46a', '#5aa9ff', '#c58cff', '#9aa7a5'];
-
-const NODE_W = 168, NODE_H = 82;
 let idSeq = 1;
 const uid = (p: string) => `${p}${idSeq++}`;
-
-type Mode = 'select' | 'connect' | 'zone';
-type Selected = { kind: 'node' | 'link' | 'zone'; id: string } | null;
-
-interface ApiPort {
-  id: number;
-  portName?: string;
-  deviceNetworkName?: string;
-  connectionAddress?: string;
-  type?: string;
-}
-
-interface ApiDevice {
-  id: number;
-  deviceName: string;
-  deviceType?: string;
-  hostName?: string;
-  modelName?: string;
-  status?: string;
-  ports?: ApiPort[];
-}
-
-interface PendingLink {
-  sourceNodeId: string;
-  destNodeId: string;
-}
-
-interface ApiRoom {
-  id: number;
-  roomName: string;
-  floor?: number;
-}
-
-interface ApiRackDetail {
-  id: number;
-  rackName: string;
-  devices: ApiDevice[];
-}
-
-interface ApiCableLink {
-  id: number;
-  srcDeviceId: number;
-  srcDeviceName?: string;
-  srcPortName?: string;
-  destDeviceId: number;
-  destDeviceName?: string;
-  destPortName?: string;
-  cableType?: string;
-  color?: string;
-}
-
-function nodeTypeForDevice(device: ApiDevice): NodeType {
-  const value = `${device.deviceType ?? ''} ${device.deviceName} ${device.modelName ?? ''}`.toUpperCase();
-  if (/BACKBONE|CORE|백본/.test(value)) return 'backbone';
-  if (/FIREWALL|방화벽|UTM/.test(value)) return 'firewall';
-  if (/IPS|IDS/.test(value)) return 'ips';
-  if (/DDOS/.test(value)) return 'ddos';
-  if (/ROUTER|라우터/.test(value)) return 'router';
-  if (/L3/.test(value)) return 'l3';
-  if (/SWITCH|스위치/.test(value)) return 'switch';
-  if (/DATABASE|\bDB\b/.test(value)) return 'db';
-  return 'server';
-}
 
 export default function NetworkDiagramEditor() {
   const queryClient = useQueryClient();
@@ -812,185 +746,5 @@ export default function NetworkDiagramEditor() {
         }}
       />
     </div>
-  );
-}
-
-function LinkCreateDialog({ pending, nodes, devices, defaultColor, defaultDash, defaultRoute, onClose, onSave }: {
-  pending: PendingLink | null;
-  nodes: DiagramNode[];
-  devices: ApiDevice[];
-  defaultColor: string;
-  defaultDash: boolean;
-  defaultRoute: 'ORTHOGONAL' | 'CURVED' | 'STRAIGHT';
-  onClose: () => void;
-  onSave: (link: Omit<DiagramLink, 'id'>) => void;
-}) {
-  const [sourcePortId, setSourcePortId] = useState('');
-  const [destPortId, setDestPortId] = useState('');
-  const [cableType, setCableType] = useState('UTP');
-  if (!pending) return null;
-  const sourceNode = nodes.find((node) => node.id === pending.sourceNodeId);
-  const destNode = nodes.find((node) => node.id === pending.destNodeId);
-  if (!sourceNode || !destNode) return null;
-  const sourceDevice = devices.find((device) => device.id === sourceNode.deviceId);
-  const destDevice = devices.find((device) => device.id === destNode.deviceId);
-  const sourcePorts = sourceDevice?.ports ?? [];
-  const destPorts = destDevice?.ports ?? [];
-  const portLabel = (port: ApiPort) => port.portName || port.deviceNetworkName || port.connectionAddress || `PORT-${port.id}`;
-  const sourcePort = sourcePorts.find((port) => String(port.id) === sourcePortId);
-  const destPort = destPorts.find((port) => String(port.id) === destPortId);
-
-  return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader><DialogTitle>장비 포트 연결</DialogTitle></DialogHeader>
-        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
-          <div className="rounded-lg border bg-muted/20 p-3">
-            <p className="mb-2 text-xs font-semibold">{sourceNode.label}</p>
-            <Label className="text-[11px]">출발 포트</Label>
-            <select value={sourcePortId} onChange={(event) => setSourcePortId(event.target.value)} className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-xs">
-              <option value="">자동/미지정</option>
-              {sourcePorts.map((port) => <option key={port.id} value={port.id}>{portLabel(port)}</option>)}
-            </select>
-          </div>
-          <Cable className="mt-9 h-5 w-5 text-muted-foreground" />
-          <div className="rounded-lg border bg-muted/20 p-3">
-            <p className="mb-2 text-xs font-semibold">{destNode.label}</p>
-            <Label className="text-[11px]">도착 포트</Label>
-            <select value={destPortId} onChange={(event) => setDestPortId(event.target.value)} className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-xs">
-              <option value="">자동/미지정</option>
-              {destPorts.map((port) => <option key={port.id} value={port.id}>{portLabel(port)}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label>케이블 종류</Label>
-          <select value={cableType} onChange={(event) => setCableType(event.target.value)} className="h-9 w-full rounded-md border bg-background px-2 text-sm">
-            <option value="UTP">UTP</option><option value="FIBER">광케이블</option><option value="DAC">DAC</option><option value="WAN">전용선/WAN</option><option value="VIRTUAL">가상 연결</option>
-          </select>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>취소</Button>
-          <Button onClick={() => onSave({ a: sourceNode.id, b: destNode.id, color: defaultColor, dash: defaultDash, sourcePortId: sourcePort?.id ?? null, sourcePortName: sourcePort ? portLabel(sourcePort) : 'AUTO', destPortId: destPort?.id ?? null, destPortName: destPort ? portLabel(destPort) : 'AUTO', cableType, route: defaultRoute })}>연결</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ToolBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: LucideIcon; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12px] transition-colors',
-        active ? 'border-[#35e0c8] bg-[#35e0c8] font-bold text-[#04211d]' : 'border-[#1d444c] bg-[#0f2b31] text-[#d8f3ef] hover:border-[#35e0c8] hover:text-[#35e0c8]',
-      )}
-    >
-      <Icon className="h-3.5 w-3.5" /> {label}
-    </button>
-  );
-}
-
-function ZoneEditDialog({
-  zone,
-  onClose,
-  onSave,
-}: {
-  zone: DiagramZone | null;
-  onClose: () => void;
-  onSave: (patch: { label: string; color: string }) => void;
-}) {
-  const [label, setLabel] = useState('');
-  const [color, setColor] = useState(LINE_COLORS[0]);
-
-  useEffect(() => {
-    if (!zone) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLabel(zone.label);
-    setColor(zone.color);
-  }, [zone]);
-
-  return (
-    <Dialog open={!!zone} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>구역 라벨 편집</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="zone-label">구역 이름</Label>
-            <Input id="zone-label" value={label} onChange={(event) => setLabel(event.target.value)} autoFocus maxLength={40} onKeyDown={(event) => { if (event.key === 'Enter' && label.trim()) onSave({ label: label.trim(), color }); }} />
-          </div>
-          <div className="space-y-2">
-            <Label>구역 색상</Label>
-            <div className="flex flex-wrap gap-2">
-              {LINE_COLORS.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setColor(item)}
-                  className={cn('h-8 w-8 rounded-full border-2 transition-transform hover:scale-110', color === item ? 'scale-110 border-foreground' : 'border-transparent')}
-                  style={{ backgroundColor: item }}
-                  aria-label={`구역 색상 ${item}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>취소</Button>
-          <Button disabled={!label.trim()} onClick={() => onSave({ label: label.trim(), color })}>저장</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function NodeEditDialog({
-  node, devices, onClose, onSave,
-}: {
-  node: DiagramNode | null;
-  devices: ApiDevice[];
-  onClose: () => void;
-  onSave: (patch: { label: string; deviceId: number | null }) => void;
-}) {
-  const [label, setLabel] = useState('');
-  const [deviceId, setDeviceId] = useState<string>('');
-
-  useEffect(() => {
-    if (!node) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLabel(node.label);
-    setDeviceId(node.deviceId != null ? String(node.deviceId) : '');
-  }, [node]);
-
-  return (
-    <Dialog open={!!node} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>장비 편집</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>이름</Label>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>연결 장비 (선택 — 지정 시 해당 장비의 장애 알람이 이 노드에 표시됩니다)</Label>
-            <select value={deviceId} onChange={(e) => setDeviceId(e.target.value)} className="h-9 w-full rounded-md border bg-transparent px-2.5 text-[13px] outline-none">
-              <option value="">연결 안 함</option>
-              {devices.map((d) => (
-                <option key={d.id} value={d.id}>{d.deviceName}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>취소</Button>
-          <Button onClick={() => onSave({ label: label.trim() || node!.label, deviceId: deviceId ? Number(deviceId) : null })}>저장</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
