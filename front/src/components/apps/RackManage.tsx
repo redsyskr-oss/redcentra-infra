@@ -143,6 +143,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const [tab, setTab] = useState<TabId>('devices');
   const [assignOpen, setAssignOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [editSeq, setEditSeq] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
 
   const { data: racks = [], isLoading } = useQuery<Rack[]>({
@@ -452,7 +453,7 @@ export default function RackManage({ data }: { data?: unknown }) {
                   <div className="flex justify-between"><span className="text-muted-foreground">총 유닛</span><span>{selectedRack.totalUnit}U</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">좌표</span><span>({selectedRack.posX}, {selectedRack.posY})</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">설치일</span><span>{selectedRack.installedAt}</span></div>
-                  <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                  <Button size="sm" variant="outline" onClick={() => { setEditSeq((n) => n + 1); setEditOpen(true); }}>
                     <Pencil className="mr-1 h-3.5 w-3.5" /> 수정
                   </Button>
                 </div>
@@ -491,6 +492,7 @@ export default function RackManage({ data }: { data?: unknown }) {
           </DialogHeader>
           {selectedRack && (
             <EditForm
+              key={editSeq}
               rack={selectedRack}
               onSubmit={(patch) => editMutation.mutate(patch)}
               pending={editMutation.isPending}
