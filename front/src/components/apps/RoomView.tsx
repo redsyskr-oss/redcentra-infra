@@ -81,11 +81,15 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   });
 
   // API 데이터가 로드되면 랙 상태 초기화 (이후 racks는 이동/추가/삭제 도구로 로컬 편집되는 작업본).
-  // useEffect 대신 렌더 중 상태 조정 패턴을 쓴다
-  // (React 공식 권장: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
-  const [handledRoomRacks, setHandledRoomRacks] = useState(roomRacks);
-  if (roomRacks && roomRacks !== handledRoomRacks) {
-    setHandledRoomRacks(roomRacks);
+  //
+  // useEffect를 쓰는 이유: 같은 room을 대시보드 위젯 등 다른 컴포넌트가 이미 조회해 두었다면
+  // react-query가 첫 렌더링부터 캐시된 roomRacks를 즉시 내려줄 수 있다. "렌더 중 상태 조정"
+  // 패턴(이전 값과 비교)은 이 경우 roomRacks가 처음부터 값을 갖고 있어 "값이 바뀌었다"는 조건이
+  // 절대 참이 되지 않아 racks를 영영 채우지 못한다. 마운트 시 무조건 한 번 반영해야 하므로
+  // (캐시 히트 여부와 무관하게) useEffect가 맞는 선택이다.
+  useEffect(() => {
+    if (!roomRacks) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRacks(roomRacks.map(r => ({
       id:       String(r.id),
       name:     r.rackName,
@@ -94,7 +98,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
       unitSize: r.totalUnit,
       status:   'ACTIVE' as RackStatus,
     })));
-  }
+  }, [roomRacks]);
 
   const selectedRack = useMemo(
     () => racks.find(r => r.id === selectedId) ?? null,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef, RowSelectionState } from '@tanstack/react-table';
 import { CheckCircle2, ClipboardCheck, Download, PackageCheck, Search } from 'lucide-react';
@@ -139,14 +139,16 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
     hostName: '', bizName: '', osVersion: '', receivedAt: new Date().toISOString().slice(0, 10),
   });
 
-  // data(요청 식별자)가 바뀔 때만 폼을 리셋한다. useEffect 대신 렌더 중 상태 조정 패턴을 쓴다
-  // (React 공식 권장: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
-  const [handledRequestId, setHandledRequestId] = useState(data?.requestId);
-  if (data?.action === 'receive' && data.modelId && data.requestId !== handledRequestId) {
-    setHandledRequestId(data.requestId);
+  // data(요청 식별자)가 바뀔 때(동일 탭이 재사용되며 다른 모델로 다시 열릴 때) 폼을 리셋한다.
+  // "렌더 중 상태 조정" 패턴은 이전에 썼다가 첫 마운트 시 handledRequestId 초기값이 data.requestId와
+  // 같아져 버려 조건이 절대 참이 되지 않는 버그가 있었다(RoomView에서 실제로 발생·확인됨).
+  // useEffect는 마운트 시 항상 한 번 실행되므로 이런 초기화 순서 문제가 없다.
+  useEffect(() => {
+    if (data?.action !== 'receive' || !data.modelId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm((current) => ({ ...current, productModelId: String(data.modelId) }));
     setAssetOpen(true);
-  }
+  }, [data?.action, data?.modelId, data?.requestId]);
 
   const { data: devices = [], isLoading } = useQuery<Device[]>({
     queryKey: ['devices', 'list'],
