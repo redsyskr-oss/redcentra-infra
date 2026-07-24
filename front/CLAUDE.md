@@ -55,7 +55,7 @@ DCIM(전산실 관제) 웹 콘솔이다. 로그인 후 좌측 사이드바 메�
 - `src/lib/mock/authService.ts` — 목업 인증/메뉴 트리 조합.
 - `server/mock-server.cjs` — json-server 0.17.4 래퍼 (lodash-id null FK 버그 패치 포함).
 
-주의: 장비 데이터가 `devices` 컬렉션과 `racks[].devices`/`rooms[].racks`에 중복 저장되어 있다. 신뢰할 소스는 `devices` 컬렉션이며, placement 라우트가 중첩본을 수동 동기화한다 (알려진 기술 부채).
+데이터 규칙: 장비는 `devices` 컬렉션이 단일 소스다 (`rackId` FK로 랙에 연결). 랙/룸에 장비를 중첩 저장하지 않으며, 룸의 랙 목록은 `racks?roomId=` 쿼리로 조회한다. 랙 상세(장비 포함)는 `GET /api/v1/racks/[rackId]`가 devices에서 조합해 준다.
 
 ### 새 앱(화면) 추가 방법
 
