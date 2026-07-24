@@ -151,7 +151,8 @@ export default function RackManage({ data }: { data?: unknown }) {
       const [rackRes, deviceRes] = await Promise.all([apiFetch('/api/v1/racks'), apiFetch('/api/v1/devices')]);
       if (!rackRes.ok) return [];
       const rackRows: Rack[] = await rackRes.json();
-      if (!deviceRes.ok) return rackRows;
+      // 랙 레코드에는 devices가 없다(단일 소스: devices 컬렉션). 조회 실패 시에도 빈 배열을 보장한다.
+      if (!deviceRes.ok) return rackRows.map((rack) => ({ ...rack, devices: [] }));
       const deviceRows: (RackDevice & { rackId: number | null })[] = await deviceRes.json();
       return rackRows.map((rack) => ({
         ...rack,

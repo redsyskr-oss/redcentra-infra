@@ -64,7 +64,6 @@ interface ApiRoom {
   id: number;
   roomName: string;
   floor?: number;
-  racks: { id: number; rackName: string; posX: number; posY: number }[];
 }
 
 interface ApiRackDetail {
@@ -277,7 +276,10 @@ export default function NetworkDiagramEditor() {
     mutationFn: async (roomId: number) => {
       const room = rooms.find((item) => item.id === roomId);
       if (!room) throw new Error('선택한 서버실을 찾을 수 없습니다.');
-      const rackDetails = await Promise.all((room.racks ?? []).map(async (rack) => {
+      // 룸의 랙 목록은 racks 컬렉션에서 roomId로 조회한다 (rooms에 중첩 저장하지 않음)
+      const racksRes = await apiFetch(`/api/v1/racks?roomId=${roomId}`);
+      const roomRacks: { id: number; rackName: string }[] = racksRes.ok ? await racksRes.json() : [];
+      const rackDetails = await Promise.all(roomRacks.map(async (rack) => {
         const res = await apiFetch(`/api/v1/racks/${rack.id}`);
         if (!res.ok) return { id: rack.id, rackName: rack.rackName, devices: [] } satisfies ApiRackDetail;
         return res.json() as Promise<ApiRackDetail>;

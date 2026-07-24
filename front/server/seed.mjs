@@ -304,9 +304,9 @@ for (const roomDef of ROOM_DEFS) {
       totalUnit: pick(rng, [42, 42, 45, 48]),
       installedAt: `202${int(rng, 2, 5)}-0${int(rng, 1, 9)}-0${int(rng, 1, 9)}`,
     };
-    rack.devices = genDevicesForRack(rack);
+    // 장비는 devices 컬렉션에만 저장한다 (rackId FK로 연결, 랙에 중첩 저장하지 않음)
     racksFlat.push(rack);
-    devicesFlat.push(...rack.devices);
+    devicesFlat.push(...genDevicesForRack(rack));
   }
 }
 
@@ -346,9 +346,10 @@ for (const def of UNRACKED_DEFS) {
 
 // 케이블 연결: 각 방마다 스위치↔서버 몇 개씩 무작위 연결
 for (const roomDef of ROOM_DEFS) {
-  const roomRacks = racksFlat.filter((r) => r.roomId === roomDef.id);
-  const switches = roomRacks.flatMap((r) => r.devices.filter((d) => d.deviceType === 'SWITCH'));
-  const servers = roomRacks.flatMap((r) => r.devices.filter((d) => d.deviceType === 'SERVER'));
+  const roomRackIds = new Set(racksFlat.filter((r) => r.roomId === roomDef.id).map((r) => r.id));
+  const roomDevices = devicesFlat.filter((d) => roomRackIds.has(d.rackId));
+  const switches = roomDevices.filter((d) => d.deviceType === 'SWITCH');
+  const servers = roomDevices.filter((d) => d.deviceType === 'SERVER');
   const linkCount = Math.min(servers.length, switches.length * 4, 8);
   for (let i = 0; i < linkCount; i++) {
     const sw = switches[i % switches.length];
@@ -382,7 +383,7 @@ const rooms = ROOM_DEFS.map((r) => ({
   gridWidth: r.gridWidth,
   gridHeight: r.gridHeight,
   totalGridCells: r.gridWidth * r.gridHeight,
-  racks: racksFlat.filter((rk) => rk.roomId === r.id).map((rk) => ({ id: rk.id, posX: rk.posX, posY: rk.posY, rackName: rk.rackName, totalUnit: rk.totalUnit })),
+  // 랙 목록은 racks 컬렉션에서 roomId로 조회한다 (rooms에 중첩 저장하지 않음)
 }));
 
 /* ══════════════════════════════════════════════
@@ -395,7 +396,7 @@ const backups = devicesFlat.filter((d) => d.deviceType === 'SERVER').slice(0, 14
   hostName: d.hostName,
   bizName: d.bizName,
   rackName: racksFlat.find((r) => r.id === d.rackId)?.rackName ?? '',
-  roomName: rooms.find((r) => r.racks.some((rk) => rk.id === d.rackId))?.roomName ?? '',
+  roomName: rooms.find((r) => r.id === racksFlat.find((rk) => rk.id === d.rackId)?.roomId)?.roomName ?? '',
   osVersion: d.osVersion,
   backupIp: `10.20.0.${i + 10}`,
   backupType: pick(rng, ['OS', 'FILE']),

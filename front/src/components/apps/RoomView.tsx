@@ -43,7 +43,6 @@ interface RoomApiResponse {
   gridWidth: number;
   gridHeight: number;
   floor: number;
-  racks: ApiRack[];
 }
 
 const STATUS_COLOR: Record<RackStatus, string> = {
@@ -1094,10 +1093,21 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const [faceSide,         setFaceSide        ] = useState<EquipmentFaceSide>('front');
   const [cameraResetKey,   setCameraResetKey  ] = useState(0);
 
+  // 룸의 랙 목록은 racks 컬렉션에서 roomId로 조회한다 (rooms에 중첩 저장하지 않음)
+  const { data: roomRacks } = useQuery<ApiRack[]>({
+    queryKey: ['room-racks', roomId],
+    queryFn: async () => {
+      const res = await apiFetch(`/api/v1/racks?roomId=${roomId}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!roomId,
+  });
+
   // API 데이터가 로드되면 랙 상태 초기화
   useEffect(() => {
-    if (!roomData?.racks) return;
-    setRacks(roomData.racks.map(r => ({
+    if (!roomRacks) return;
+    setRacks(roomRacks.map(r => ({
       id:       String(r.id),
       name:     r.rackName,
       posX:     r.posX + 1, // 0-based → 1-based
@@ -1105,7 +1115,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
       unitSize: r.totalUnit,
       status:   'ACTIVE' as RackStatus,
     })));
-  }, [roomData]);
+  }, [roomRacks]);
 
   const selectedRack = useMemo(
     () => racks.find(r => r.id === selectedId) ?? null,

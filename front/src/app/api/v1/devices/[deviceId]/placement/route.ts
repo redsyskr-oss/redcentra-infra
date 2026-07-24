@@ -9,19 +9,6 @@ interface Device {
   [key: string]: unknown;
 }
 
-interface Rack {
-  id: number;
-  roomId?: number;
-  devices?: Device[];
-  [key: string]: unknown;
-}
-
-interface Room {
-  id: number;
-  racks?: Rack[];
-  [key: string]: unknown;
-}
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ deviceId: string }> },
@@ -58,27 +45,10 @@ export async function PATCH(
   const current = await fetchMock<Device>(`/devices/${deviceId}`);
   if (!current) return NextResponse.json({ error: '장비를 찾을 수 없습니다.' }, { status: 404 });
 
+  // 장비 배치는 devices 컬렉션이 단일 소스다. 랙/룸에는 장비를 중첩 저장하지 않으므로
+  // 별도 동기화가 필요 없다 (랙 상세는 GET /racks/[rackId]가 devices에서 조합).
   const updated = await patchMock<Device>(`/devices/${deviceId}`, patch);
   if (!updated) return NextResponse.json({ error: '장비 배치 정보를 저장하지 못했습니다.' }, { status: 500 });
-
-  const oldRackId = current.rackId;
-  const newRackId = patch.rackId == null ? null : Number(patch.rackId);
-  const affectedRackIds = [...new Set([oldRackId, newRackId].filter((id): id is number => id != null))];
-
-  for (const rackId of affectedRackIds) {
-    const rack = await fetchMock<Rack>(`/racks/${rackId}`);
-    if (!rack) continue;
-    const withoutDevice = (rack.devices ?? []).filter((device) => Number(device.id) !== deviceId);
-    const devices = rackId === newRackId ? [...withoutDevice, updated] : withoutDevice;
-    const updatedRack = await patchMock<Rack>(`/racks/${rackId}`, { devices });
-    if (updatedRack?.roomId != null) {
-      const room = await fetchMock<Room>(`/rooms/${updatedRack.roomId}`);
-      if (room) {
-        const roomRacks = (room.racks ?? []).map((item) => Number(item.id) === rackId ? updatedRack : item);
-        await patchMock(`/rooms/${updatedRack.roomId}`, { racks: roomRacks });
-      }
-    }
-  }
 
   return NextResponse.json(updated);
 }
