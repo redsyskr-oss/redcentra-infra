@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchMock, isMockApi, patchMock } from '@/lib/mock/jsonServerClient';
 import { parseMockToken } from '@/lib/mock/authService';
+import { authorizeMockRequest, authzErrorResponse } from '@/lib/mock/accessControl';
 
 interface Device {
   id: number;
@@ -33,9 +34,12 @@ export async function PATCH(
     return NextResponse.json({ error: '올바르지 않은 장비 ID입니다.' }, { status: 400 });
   }
 
-  // 목업 모드에서는 이 전용 라우트가 [...path] 프록시보다 우선 매칭되므로 인증을 직접 확인한다.
-  if (isMockApi() && parseMockToken(request.headers.get('cookie') ?? '') == null) {
-    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+  // 목업 모드에서는 이 전용 라우트가 [...path] 프록시보다 우선 매칭되므로 인증·인가를 직접 확인한다.
+  if (isMockApi()) {
+    const memberId = parseMockToken(request.headers.get('cookie') ?? '');
+    if (memberId == null) return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+    const authz = await authorizeMockRequest(memberId, 'devices', 'PATCH');
+    if (!authz.ok) return NextResponse.json(authzErrorResponse(authz), { status: authz.status });
   }
 
   if (!isMockApi()) {

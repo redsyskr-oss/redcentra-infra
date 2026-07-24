@@ -6,11 +6,31 @@ interface MockUserRow {
   userId: string;
 }
 
+/** 비밀번호 정책: change-password와 동일 (10자 이상, 영문·숫자·특수문자 포함) */
+function passwordPolicyError(password: unknown): string | null {
+  if (typeof password !== "string" || password.length < 10) return "비밀번호는 10자 이상이어야 합니다.";
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    return "비밀번호는 영문, 숫자, 특수문자를 모두 포함해야 합니다.";
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
 
   if (isMockApi()) {
     const { userId, password, userName, userMobile, userEmail, ...rest } = body;
+
+    if (!userId || !userName) {
+      return NextResponse.json(
+        { code: "INVALID_REQUEST", message: "아이디와 이름은 필수입니다." },
+        { status: 400 },
+      );
+    }
+    const pwError = passwordPolicyError(password);
+    if (pwError) {
+      return NextResponse.json({ code: "INVALID_PASSWORD", message: pwError }, { status: 400 });
+    }
 
     const existing = await fetchMock<MockUserRow[]>(`/users?userId=${encodeURIComponent(userId ?? "")}`);
     if (existing && existing.length > 0) {

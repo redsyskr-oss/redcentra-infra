@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isMockApi, proxyToMockBackend } from "@/lib/mock/jsonServerClient";
 import { getUserInfo, parseMockToken } from "@/lib/mock/authService";
+import { authorizeMockRequest, authzErrorResponse } from "@/lib/mock/accessControl";
 
 // .env 설정: http://localhost:8080/api/v1
 const BACKEND_URL = process.env.INTERNAL_BACKEND_URL!;
@@ -15,12 +16,19 @@ async function proxyRequestMock(request: NextRequest, actualPath: string): Promi
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
+  // auth/me는 비밀번호 변경 대기 상태에서도 접근 가능해야 하므로 역할 검사 없이 통과
   if (actualPath === "auth/me") {
     const userInfo = await getUserInfo(memberId);
     if (!userInfo) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
     return NextResponse.json(userInfo);
+  }
+
+  // 역할 기반 접근 제어 (계정 상태·비밀번호 변경 필요 여부 포함)
+  const authz = await authorizeMockRequest(memberId, actualPath, request.method);
+  if (!authz.ok) {
+    return NextResponse.json(authzErrorResponse(authz), { status: authz.status });
   }
 
   const url = new URL(request.url);

@@ -82,6 +82,14 @@ export default function SignupPage() {
       setSubmitError('비밀번호가 일치하지 않습니다.');
       return;
     }
+    if (password.length < 10) {
+      setSubmitError('비밀번호는 10자 이상이어야 합니다.');
+      return;
+    }
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      setSubmitError('비밀번호는 영문, 숫자, 특수문자를 모두 포함해야 합니다.');
+      return;
+    }
     if (memberType === 'PARTNER' && !companyId) {
       setSubmitError('소속 업체를 선택해주세요.');
       return;

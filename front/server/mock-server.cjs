@@ -18,6 +18,14 @@ router.db._.mixin({
     if (id === null || id === undefined) return undefined;
     return this.find(collection, (doc) => doc && doc.id != null && doc.id.toString() === id.toString());
   },
+  //   3) getRemovable 무력화 — lodash-id는 DELETE 때마다 전체 db를 훑어 "부모가 없는 FK"를 가진
+  //      행을 연쇄 삭제한다. 그런데 `xxxId`로 끝나는 필드를 전부 FK로 간주하기 때문에, users의
+  //      `userId`(로그인 아이디 문자열)를 users 컬렉션 FK로 오인해 아무 컬렉션에 DELETE 한 번만
+  //      발생해도 users 전체가 삭제되는 치명적 부작용이 있다. 연쇄 삭제는 쓰지 않으므로 항상
+  //      빈 배열을 반환해 무력화한다.
+  getRemovable() {
+    return [];
+  },
 });
 
 server.use(middlewares);
