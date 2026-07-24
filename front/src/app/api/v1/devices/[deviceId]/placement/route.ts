@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchMock, isMockApi, patchMock } from '@/lib/mock/jsonServerClient';
+import { parseMockToken } from '@/lib/mock/authService';
 
 interface Device {
   id: number;
@@ -30,6 +31,11 @@ export async function PATCH(
 
   if (!Number.isFinite(deviceId)) {
     return NextResponse.json({ error: '올바르지 않은 장비 ID입니다.' }, { status: 400 });
+  }
+
+  // 목업 모드에서는 이 전용 라우트가 [...path] 프록시보다 우선 매칭되므로 인증을 직접 확인한다.
+  if (isMockApi() && parseMockToken(request.headers.get('cookie') ?? '') == null) {
+    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
   }
 
   if (!isMockApi()) {

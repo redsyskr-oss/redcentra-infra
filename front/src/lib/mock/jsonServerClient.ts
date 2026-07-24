@@ -7,7 +7,9 @@ export const MOCK_API_URL = configuredMockApiUrl
   || (process.env.VERCEL === "1" ? "https://redsys-ten.vercel.app/api" : "http://localhost:4000");
 
 export function isMockApi(): boolean {
-  return true;
+  // MOCK_API=false로 바꾸면 auth 라우트/[...path] 프록시가 실 백엔드(INTERNAL_BACKEND_URL)로 전환된다.
+  // 미설정(예: Vercel 목업 배포) 시에는 목업 모드가 기본값이다.
+  return process.env.MOCK_API !== "false";
 }
 
 /**
@@ -28,6 +30,26 @@ function normalizeIds<T>(value: T): T {
       } else {
         out[key] = normalizeIds(v);
       }
+    }
+    return out as T;
+  }
+  return value;
+}
+
+/**
+ * 프록시를 거쳐 브라우저로 나가는 응답에서 비밀번호 등 민감 필드를 제거한다.
+ * (로그인/비밀번호 변경 등 서버 내부 로직은 fetchMock을 직접 쓰므로 영향 없다.)
+ */
+const SENSITIVE_FIELDS = new Set(["userPassword"]);
+
+function stripSensitive<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => stripSensitive(v)) as T;
+  }
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      if (!SENSITIVE_FIELDS.has(key)) out[key] = stripSensitive(v);
     }
     return out as T;
   }
@@ -120,7 +142,7 @@ export async function proxyToMockBackend(
 
     const totalPages = Math.max(1, Math.ceil(totalElements / size));
     const body = {
-      content: normalizeIds(content),
+      content: stripSensitive(normalizeIds(content)),
       page: { size, number: page, totalElements, totalPages },
     };
     return new Response(JSON.stringify(body), {
@@ -132,7 +154,7 @@ export async function proxyToMockBackend(
   const contentType = res.headers.get("content-type") ?? "application/json";
   if (contentType.includes("application/json")) {
     const text = await res.text();
-    const normalized = text ? JSON.stringify(normalizeIds(JSON.parse(text))) : text;
+    const normalized = text ? JSON.stringify(stripSensitive(normalizeIds(JSON.parse(text)))) : text;
     return new Response(normalized, { status: res.status, headers: { "Content-Type": contentType } });
   }
 

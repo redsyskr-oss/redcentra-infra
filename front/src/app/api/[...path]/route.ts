@@ -9,9 +9,14 @@ const BACKEND_URL = process.env.INTERNAL_BACKEND_URL!;
 async function proxyRequestMock(request: NextRequest, actualPath: string): Promise<NextResponse> {
   const cookieHeader = request.headers.get("cookie") ?? "";
 
+  // 쿠키 존재 여부만이 아니라 목업 토큰 형식(mock.<memberId>)까지 검증한다.
+  const memberId = parseMockToken(cookieHeader);
+  if (memberId == null) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   if (actualPath === "auth/me") {
-    const memberId = parseMockToken(cookieHeader);
-    const userInfo = memberId ? await getUserInfo(memberId) : null;
+    const userInfo = await getUserInfo(memberId);
     if (!userInfo) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }

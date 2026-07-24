@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchMock, isMockApi, MOCK_API_URL, postMock } from '@/lib/mock/jsonServerClient';
+import { parseMockToken } from '@/lib/mock/authService';
 
 interface DeviceInput { deviceName: string; assetNo: string; deviceType: string; modelName?: string; hostName?: string; serialNumber?: string; introDate?: string; uPosition: number; uSize: number; status?: string; }
 interface ExistingDevice extends DeviceInput { id: number; rackId: number | null; }
@@ -25,6 +26,8 @@ function validate(devices: DeviceInput[], rack: Rack, allDevices: ExistingDevice
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ rackId: string }> }) {
   const { rackId: rawRackId } = await params; const rackId = Number(rawRackId); const payload = await request.json(); const devices = payload.devices as DeviceInput[];
+  // 목업 모드에서는 이 전용 라우트가 [...path] 프록시보다 우선 매칭되므로 인증을 직접 확인한다.
+  if (isMockApi() && parseMockToken(request.headers.get('cookie') ?? '') == null) return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
   if (!Array.isArray(devices) || devices.length === 0) return NextResponse.json({ error: '등록할 장비가 없습니다.' }, { status: 400 });
   if (!isMockApi()) {
     const cookie = request.headers.get('cookie') ?? '';
