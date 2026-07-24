@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 설비 · 전력정보 조회 — UI-LNK-001 */
 interface FacilityMetric {
@@ -36,7 +37,7 @@ export default function FacilityView({ data: _data }: { data?: unknown }) {
   const { data: metrics = [] } = useQuery<FacilityMetric[]>({
     queryKey: ['facilityMetrics'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/facilityMetrics');
+      const res = await apiFetch('/api/v1/facilityMetrics');
       if (!res.ok) return [];
       return res.json();
     },
@@ -45,7 +46,7 @@ export default function FacilityView({ data: _data }: { data?: unknown }) {
   const { data: logs = [] } = useQuery<InterfaceLog[]>({
     queryKey: ['interfaceLogs'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/interfaceLogs');
+      const res = await apiFetch('/api/v1/interfaceLogs');
       if (!res.ok) return [];
       return res.json();
     },

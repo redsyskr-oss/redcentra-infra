@@ -17,6 +17,7 @@ import { AlertTriangle, Maximize2, Minimize2, Pencil } from 'lucide-react';
 import { useTabStore } from '@/store/useTabStore';
 import { useUser } from '@/hooks/useUser';
 import { NodeTypeIcon, type NodeType, type DiagramNode as SharedDiagramNode } from '@/lib/networkDiagram';
+import { apiFetch } from '@/lib/api';
 
 const SELECTED_KEY = 'redcentra.dashboard.selectedDiagram.v1';
 const NODE_W = 76, NODE_H = 56;
@@ -174,7 +175,7 @@ export default function DashboardNetworkWidget() {
   const { data: links = [], isLoading: linksLoading } = useQuery<ApiCableLink[]>({
     queryKey: ['cableLinks'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/cableLinks');
+      const res = await apiFetch('/api/v1/cableLinks');
       if (!res.ok) return [];
       return res.json();
     },
@@ -184,7 +185,7 @@ export default function DashboardNetworkWidget() {
     queryKey: ['networkDiagram-dashboard', companyId],
     enabled: companyId != null,
     queryFn: async () => {
-      const res = await fetch(`/api/v1/networkDiagrams?companyId=${companyId}`);
+      const res = await apiFetch(`/api/v1/networkDiagrams?companyId=${companyId}`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -193,7 +194,7 @@ export default function DashboardNetworkWidget() {
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<MaintenanceTask[]>({
     queryKey: ['maintenanceTasks'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/maintenanceTasks');
+      const res = await apiFetch('/api/v1/maintenanceTasks');
       if (!res.ok) return [];
       return res.json();
     },

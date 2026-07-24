@@ -13,6 +13,8 @@
  *     req: { fileName, contentType, category } → res: { uploadUrl, objectKey }
  */
 
+import { apiFetch } from './api';
+
 export interface PresignedUploadResult {
   objectKey: string;
 }
@@ -22,7 +24,7 @@ export async function uploadFile(
   category: string,
 ): Promise<PresignedUploadResult> {
   // 1) presigned URL 발급 (BFF 프록시 → Spring Boot)
-  const presignRes = await fetch('/api/v1/files/presigned-url', {
+  const presignRes = await apiFetch('/api/v1/files/presigned-url', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -50,7 +52,7 @@ export async function uploadFile(
 
 /** 다운로드/미리보기용 presigned GET URL 조회 */
 export async function getFileUrl(objectKey: string): Promise<string> {
-  const res = await fetch(
+  const res = await apiFetch(
     `/api/v1/files/presigned-url?objectKey=${encodeURIComponent(objectKey)}`,
   );
   if (!res.ok) throw new Error('파일 URL 조회에 실패했습니다.');

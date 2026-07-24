@@ -6,6 +6,7 @@ import { Lock, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 역할별 메뉴 권한 관리 — UI-SYS-004 */
 interface Role {
@@ -46,7 +47,7 @@ export default function PermissionManage({ data: _data }: { data?: unknown }) {
   const { data: roles = [] } = useQuery<Role[]>({
     queryKey: ['roles'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/roles');
+      const res = await apiFetch('/api/v1/roles');
       if (!res.ok) return [];
       return res.json();
     },
@@ -55,7 +56,7 @@ export default function PermissionManage({ data: _data }: { data?: unknown }) {
   const { data: menus = [] } = useQuery<Menu[]>({
     queryKey: ['menus-admin'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/menus');
+      const res = await apiFetch('/api/v1/menus');
       if (!res.ok) return [];
       return res.json();
     },
@@ -64,7 +65,7 @@ export default function PermissionManage({ data: _data }: { data?: unknown }) {
   const { data: menuRoles = [] } = useQuery<MenuRole[]>({
     queryKey: ['menuRoles-admin'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/menuRoles');
+      const res = await apiFetch('/api/v1/menuRoles');
       if (!res.ok) return [];
       return res.json();
     },
@@ -99,7 +100,7 @@ export default function PermissionManage({ data: _data }: { data?: unknown }) {
         const perm = localPerm.get(menuId);
         const record = permByMenuIdForRole.get(menuId);
         if (!perm || !record) continue;
-        await fetch(`/api/v1/menuRoles/${record.id}`, {
+        await apiFetch(`/api/v1/menuRoles/${record.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(perm),

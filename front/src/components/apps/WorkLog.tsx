@@ -17,6 +17,7 @@ import { DataTable } from '@/components/common/DataTable';
 import { Card, CardContent } from '@/components/ui/card';
 import type { ColumnDef } from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /**
  * 장애 · 작업 관리 — UI-MTN-001
@@ -56,7 +57,7 @@ export default function WorkLog({ data: _data }: { data?: unknown }) {
   const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ['maintenanceTasks'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/maintenanceTasks');
+      const res = await apiFetch('/api/v1/maintenanceTasks');
       if (!res.ok) return [];
       return res.json();
     },
@@ -64,7 +65,7 @@ export default function WorkLog({ data: _data }: { data?: unknown }) {
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status, actionNote }: { id: number; status: Task['status']; actionNote?: string }) => {
-      const res = await fetch(`/api/v1/maintenanceTasks/${id}`, {
+      const res = await apiFetch(`/api/v1/maintenanceTasks/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(actionNote !== undefined ? { status, actionNote } : { status }),
@@ -81,7 +82,7 @@ export default function WorkLog({ data: _data }: { data?: unknown }) {
 
   const createMutation = useMutation({
     mutationFn: async (payload: Partial<Task>) => {
-      const res = await fetch('/api/v1/maintenanceTasks', {
+      const res = await apiFetch('/api/v1/maintenanceTasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, status: 'RECEIVED', actionNote: null, createdAt: new Date().toISOString() }),

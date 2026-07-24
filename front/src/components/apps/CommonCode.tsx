@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 공통 코드 관리 — UI-SYS-003 */
 interface CodeGroup {
@@ -39,7 +40,7 @@ export default function CommonCode({ data: _data }: { data?: unknown }) {
   const { data: groups = [] } = useQuery<CodeGroup[]>({
     queryKey: ['commonCodeGroups'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/commonCodeGroups');
+      const res = await apiFetch('/api/v1/commonCodeGroups');
       if (!res.ok) return [];
       return res.json();
     },
@@ -48,7 +49,7 @@ export default function CommonCode({ data: _data }: { data?: unknown }) {
   const { data: codes = [] } = useQuery<Code[]>({
     queryKey: ['commonCodes'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/commonCodes');
+      const res = await apiFetch('/api/v1/commonCodes');
       if (!res.ok) return [];
       return res.json();
     },
@@ -56,7 +57,7 @@ export default function CommonCode({ data: _data }: { data?: unknown }) {
 
   const toggleMutation = useMutation({
     mutationFn: async (c: Code) => {
-      const res = await fetch(`/api/v1/commonCodes/${c.id}`, {
+      const res = await apiFetch(`/api/v1/commonCodes/${c.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inUse: !c.inUse }),
@@ -70,7 +71,7 @@ export default function CommonCode({ data: _data }: { data?: unknown }) {
   const createMutation = useMutation({
     mutationFn: async (payload: Omit<Code, 'id'>) => {
       const nextId = Math.max(0, ...codes.map((c) => c.id)) + 1;
-      const res = await fetch('/api/v1/commonCodes', {
+      const res = await apiFetch('/api/v1/commonCodes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: nextId, ...payload }),

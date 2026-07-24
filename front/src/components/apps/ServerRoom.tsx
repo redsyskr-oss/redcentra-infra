@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { apiFetch } from '@/lib/api';
 
 /* ─── 타입 정의 ─── */
 interface Room {
@@ -42,7 +43,7 @@ export default function ServerRoom() {
   const { data, isLoading } = useQuery({
     queryKey: ['rooms'],
     queryFn: async (): Promise<RoomResponse> => {
-      const res = await fetch('/api/v1/rooms?page=1&size=100');
+      const res = await apiFetch('/api/v1/rooms?page=1&size=100');
       if (!res.ok) throw new Error('Failed to fetch rooms');
       return res.json();
     },
@@ -137,7 +138,7 @@ function CreateRoomModal({ onClose }: { onClose: () => void }) {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/v1/rooms', {
+      const res = await apiFetch('/api/v1/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomName, floor, gridWidth, gridHeight }),

@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 type LicenseCategory = 'OS' | 'SOFTWARE';
@@ -108,7 +109,7 @@ const contractQuantityLabel = (assignUnit: AssignUnit) =>
       : '구매 수량';
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, init);
+  const response = await apiFetch(url, init);
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     throw new Error(payload?.message ?? payload?.error ?? '요청을 처리하지 못했습니다.');

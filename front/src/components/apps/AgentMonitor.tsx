@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Activity, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 에이전트 수집정보 — UI-MON-001 */
 interface Agent {
@@ -48,7 +49,7 @@ export default function AgentMonitor({ data: _data }: { data?: unknown }) {
   const { data: agents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ['agents'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/agents');
+      const res = await apiFetch('/api/v1/agents');
       if (!res.ok) return [];
       return res.json();
     },
@@ -57,7 +58,7 @@ export default function AgentMonitor({ data: _data }: { data?: unknown }) {
   const { data: perfs = [] } = useQuery<Perf[]>({
     queryKey: ['agentPerformance'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/agentPerformance');
+      const res = await apiFetch('/api/v1/agentPerformance');
       if (!res.ok) return [];
       return res.json();
     },
@@ -66,7 +67,7 @@ export default function AgentMonitor({ data: _data }: { data?: unknown }) {
   const { data: disks = [] } = useQuery<Disk[]>({
     queryKey: ['agentDisk'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/agentDisk');
+      const res = await apiFetch('/api/v1/agentDisk');
       if (!res.ok) return [];
       return res.json();
     },

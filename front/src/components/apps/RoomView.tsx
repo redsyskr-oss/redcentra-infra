@@ -7,6 +7,7 @@ import { OrbitControls, Text, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { AlertTriangle, Server, Move, PackagePlus, Trash2, Loader2, X, Search, Thermometer, ArrowUpRightFromSquare, KeyRound } from 'lucide-react';
 import { equipmentFaceplateDataUrl, type EquipmentFaceSide } from '@/lib/equipment-faceplate';
+import { apiFetch } from '@/lib/api';
 
 /* ══════════════════════════════════════════════
    1. 타입 & 상수 정의
@@ -1053,7 +1054,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: roomData, isLoading } = useQuery({
     queryKey: ['room', roomId],
     queryFn: async (): Promise<RoomApiResponse> => {
-      const res = await fetch(`/api/v1/rooms/${roomId}`);
+      const res = await apiFetch(`/api/v1/rooms/${roomId}`);
       if (!res.ok) throw new Error('Failed to fetch room');
       return res.json();
     },
@@ -1063,7 +1064,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: maintenanceTasks = [] } = useQuery<MaintenanceTask[]>({
     queryKey: ['maintenanceTasks'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/maintenanceTasks');
+      const res = await apiFetch('/api/v1/maintenanceTasks');
       if (!res.ok) return [];
       return res.json();
     },
@@ -1114,7 +1115,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: faceplateModels = [] } = useQuery<ProductModelFaceplate[]>({
     queryKey: ['productModels'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/productModels');
+      const res = await apiFetch('/api/v1/productModels');
       if (!res.ok) return [];
       return res.json();
     },
@@ -1122,7 +1123,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: faceplatePortTemplates = [] } = useQuery<FaceplatePortTemplate[]>({
     queryKey: ['portTemplates'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/portTemplates');
+      const res = await apiFetch('/api/v1/portTemplates');
       if (!res.ok) return [];
       return res.json();
     },
@@ -1146,7 +1147,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: rackDetail, isFetching: isLoadingDevices } = useQuery({
     queryKey: ['rack-detail', selectedId],
     queryFn: async (): Promise<ApiRackDetail> => {
-      const res = await fetch(`/api/v1/racks/${selectedId}`);
+      const res = await apiFetch(`/api/v1/racks/${selectedId}`);
       if (!res.ok) throw new Error('Failed to fetch rack detail');
       return res.json();
     },
@@ -1162,7 +1163,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
     queries: racks.map((rack) => ({
           queryKey: ['rack-detail', rack.id],
           queryFn: async (): Promise<ApiRackDetail> => {
-            const res = await fetch(`/api/v1/racks/${rack.id}`);
+            const res = await apiFetch(`/api/v1/racks/${rack.id}`);
             if (!res.ok) throw new Error('Failed to fetch rack detail');
             return res.json();
           },
@@ -1184,7 +1185,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: deviceDetail, isFetching: isLoadingDevice } = useQuery({
     queryKey: ['device-detail', selectedDeviceId],
     queryFn: async (): Promise<ApiDeviceDetail> => {
-      const res = await fetch(`/api/v1/devices/${selectedDeviceId}`);
+      const res = await apiFetch(`/api/v1/devices/${selectedDeviceId}`);
       if (!res.ok) throw new Error('Failed to fetch device');
       return res.json();
     },
@@ -1195,7 +1196,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: devicesFlat = [] } = useQuery({
     queryKey: ['devices-flat-all'],
     queryFn: async (): Promise<ApiDeviceFlat[]> => {
-      const res = await fetch('/api/v1/devices');
+      const res = await apiFetch('/api/v1/devices');
       if (!res.ok) return [];
       return res.json();
     },
@@ -1288,7 +1289,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: envSensors = [] } = useQuery({
     queryKey: ['env-sensors'],
     queryFn: async (): Promise<ApiEnvSensor[]> => {
-      const res = await fetch('/api/v1/envSensors');
+      const res = await apiFetch('/api/v1/envSensors');
       if (!res.ok) return [];
       return res.json();
     },
@@ -1308,7 +1309,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: swLicenses = [] } = useQuery({
     queryKey: ['swLicenses'],
     queryFn: async (): Promise<ApiSwLicense[]> => {
-      const res = await fetch('/api/v1/swLicenses');
+      const res = await apiFetch('/api/v1/swLicenses');
       if (!res.ok) return [];
       return res.json();
     },
@@ -1316,7 +1317,7 @@ export default function RoomView({ data, dashboardMode = false }: { data?: { roo
   const { data: licenseAssignments = [] } = useQuery({
     queryKey: ['licenseAssignments'],
     queryFn: async (): Promise<ApiLicenseAssignment[]> => {
-      const res = await fetch('/api/v1/licenseAssignments');
+      const res = await apiFetch('/api/v1/licenseAssignments');
       if (!res.ok) return [];
       return res.json();
     },
@@ -1921,7 +1922,7 @@ function DeviceModal({
       if (!faultTitle.trim()) throw new Error('장애 제목을 입력해 주세요.');
       if (!faultAssignee.trim()) throw new Error('담당자를 입력해 주세요.');
       const now = new Date().toISOString();
-      const res = await fetch('/api/v1/maintenanceTasks', {
+      const res = await apiFetch('/api/v1/maintenanceTasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

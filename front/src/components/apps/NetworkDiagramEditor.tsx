@@ -17,6 +17,7 @@ import {
   NODE_ICON, PALETTE,
   type NodeType, type DiagramNode, type DiagramLink, type DiagramZone, type DiagramState,
 } from '@/lib/networkDiagram';
+import { apiFetch } from '@/lib/api';
 
 /** 네트워크 구성도 편집기 — 사용자가 자신의 조직 네트워크망을 직접 그려서 저장한다.
  * 저장된 구성도는 대시보드 위젯에서 그대로 불러와 장애 알람과 연동해 보여준다.
@@ -130,7 +131,7 @@ export default function NetworkDiagramEditor() {
   const { data: devices = [] } = useQuery<ApiDevice[]>({
     queryKey: ['devices-min'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/devices');
+      const res = await apiFetch('/api/v1/devices');
       if (!res.ok) return [];
       return res.json();
     },
@@ -139,7 +140,7 @@ export default function NetworkDiagramEditor() {
   const { data: rooms = [] } = useQuery<ApiRoom[]>({
     queryKey: ['rooms-diagram-auto'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/rooms?page=1&size=100');
+      const res = await apiFetch('/api/v1/rooms?page=1&size=100');
       if (!res.ok) return [];
       const result = await res.json();
       return Array.isArray(result) ? result : result.content ?? result.items ?? [];
@@ -149,7 +150,7 @@ export default function NetworkDiagramEditor() {
   const { data: cableLinks = [] } = useQuery<ApiCableLink[]>({
     queryKey: ['cableLinks'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/cableLinks');
+      const res = await apiFetch('/api/v1/cableLinks');
       if (!res.ok) return [];
       return res.json();
     },
@@ -159,7 +160,7 @@ export default function NetworkDiagramEditor() {
     queryKey: ['networkDiagrams', companyId],
     enabled: companyId != null,
     queryFn: async () => {
-      const res = await fetch(`/api/v1/networkDiagrams?companyId=${companyId}`);
+      const res = await apiFetch(`/api/v1/networkDiagrams?companyId=${companyId}`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -200,7 +201,7 @@ export default function NetworkDiagramEditor() {
       if (companyId == null) return;
       const finalName = name.trim() || '이름 없는 구성도';
       if (rowId != null) {
-        const res = await fetch(`/api/v1/networkDiagrams/${rowId}`, {
+        const res = await apiFetch(`/api/v1/networkDiagrams/${rowId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: finalName, ...diagram, updatedAt: new Date().toISOString() }),
@@ -208,7 +209,7 @@ export default function NetworkDiagramEditor() {
         if (!res.ok) throw new Error('저장 실패');
         return res.json();
       }
-      const res = await fetch('/api/v1/networkDiagrams', {
+      const res = await apiFetch('/api/v1/networkDiagrams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ companyId, name: finalName, ...diagram, updatedAt: new Date().toISOString() }),
@@ -277,7 +278,7 @@ export default function NetworkDiagramEditor() {
       const room = rooms.find((item) => item.id === roomId);
       if (!room) throw new Error('선택한 서버실을 찾을 수 없습니다.');
       const rackDetails = await Promise.all((room.racks ?? []).map(async (rack) => {
-        const res = await fetch(`/api/v1/racks/${rack.id}`);
+        const res = await apiFetch(`/api/v1/racks/${rack.id}`);
         if (!res.ok) return { id: rack.id, rackName: rack.rackName, devices: [] } satisfies ApiRackDetail;
         return res.json() as Promise<ApiRackDetail>;
       }));

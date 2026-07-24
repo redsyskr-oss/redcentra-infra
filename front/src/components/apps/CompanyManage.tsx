@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { apiFetch } from '@/lib/api';
 
 interface Company {
   id: number;
@@ -49,7 +50,7 @@ export default function CompanyManage() {
   const { data: companies = [], isLoading, isError } = useQuery<Company[]>({
     queryKey: ['companies-admin'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/companies');
+      const res = await apiFetch('/api/v1/companies');
       if (!res.ok) throw new Error(await errorMessage(res, '회사 목록을 불러오지 못했습니다.'));
       return res.json();
     },
@@ -58,7 +59,7 @@ export default function CompanyManage() {
   const { data: users = [] } = useQuery<CompanyUser[]>({
     queryKey: ['users-company-count'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/users');
+      const res = await apiFetch('/api/v1/users');
       return res.ok ? res.json() : [];
     },
   });
@@ -108,7 +109,7 @@ export default function CompanyManage() {
     mutationFn: async (company: Company) => {
       const count = userCounts.get(Number(company.id)) ?? 0;
       if (count > 0) throw new Error(`소속 사용자가 ${count}명 있어 삭제할 수 없습니다.`);
-      const res = await fetch(`/api/v1/companies/${company.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/v1/companies/${company.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(await errorMessage(res, '회사 삭제에 실패했습니다.'));
     },
     onSuccess: async () => {

@@ -7,6 +7,7 @@ import { CheckCircle2, Loader2, PlugZap } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { apiFetch } from '@/lib/api';
 
 /** 메트릭 수집관리 — UI-MON-002 (신규 제안: OOB Redfish/IPMI/SNMP) */
 interface MetricTarget {
@@ -31,7 +32,7 @@ export default function MetricConfig({ data: _data }: { data?: unknown }) {
   const { data: targets = [] } = useQuery<MetricTarget[]>({
     queryKey: ['metricTargets'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/metricTargets?page=1&size=200');
+      const res = await apiFetch('/api/v1/metricTargets?page=1&size=200');
       if (!res.ok) return [];
       const json = await res.json();
       return json.content ?? [];

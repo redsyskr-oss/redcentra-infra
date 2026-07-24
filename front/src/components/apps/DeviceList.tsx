@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import ExcelDownloadModal, { type ExcelColumn } from '@/components/common/ExcelDownloadModal';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** IT자산 목록 — UI-AST-001 (목록형 공통 템플릿: UI-BKP-001 레이아웃 준용) */
 interface Device {
@@ -147,7 +148,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: devices = [], isLoading } = useQuery<Device[]>({
     queryKey: ['devices', 'list'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/devices');
+      const res = await apiFetch('/api/v1/devices');
       if (!res.ok) return [];
       return res.json();
     },
@@ -156,7 +157,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: racks = [] } = useQuery<Rack[]>({
     queryKey: ['racks-flat-min'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/racks');
+      const res = await apiFetch('/api/v1/racks');
       if (!res.ok) return [];
       return res.json();
     },
@@ -165,7 +166,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: rooms = [] } = useQuery<Room[]>({
     queryKey: ['rooms-flat-min'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/rooms');
+      const res = await apiFetch('/api/v1/rooms');
       if (!res.ok) return [];
       return res.json();
     },
@@ -174,7 +175,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: models = [] } = useQuery<ProductModel[]>({
     queryKey: ['productModels'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/productModels');
+      const res = await apiFetch('/api/v1/productModels');
       if (!res.ok) return [];
       return res.json();
     },
@@ -183,7 +184,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ['companies-admin'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/companies');
+      const res = await apiFetch('/api/v1/companies');
       if (!res.ok) return [];
       return res.json();
     },
@@ -192,7 +193,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: backups = [] } = useQuery<Backup[]>({
     queryKey: ['backups-min'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/backups');
+      const res = await apiFetch('/api/v1/backups');
       if (!res.ok) return [];
       return res.json();
     },
@@ -202,7 +203,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: agents = [] } = useQuery<Agent[]>({
     queryKey: ['agents-min'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/agents');
+      const res = await apiFetch('/api/v1/agents');
       if (!res.ok) return [];
       return res.json();
     },
@@ -212,7 +213,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
   const { data: tasks = [] } = useQuery<MaintenanceTask[]>({
     queryKey: ['maintenance-min'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/maintenanceTasks');
+      const res = await apiFetch('/api/v1/maintenanceTasks');
       if (!res.ok) return [];
       return res.json();
     },
@@ -237,7 +238,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
     mutationFn: async () => {
       const model = models.find((item) => item.id === Number(form.productModelId));
       if (!model) throw new Error('모델을 선택하세요.');
-      const res = await fetch('/api/v1/devices', {
+      const res = await apiFetch('/api/v1/devices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -279,7 +280,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
 
   const approveInspection = useMutation({
     mutationFn: async (device: Device) => {
-      const res = await fetch(`/api/v1/devices/${device.id}`, {
+      const res = await apiFetch(`/api/v1/devices/${device.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -302,7 +303,7 @@ export default function DeviceList({ data }: { data?: DeviceListData }) {
 
   const activateInstalledDevice = useMutation({
     mutationFn: async (device: Device) => {
-      const res = await fetch(`/api/v1/devices/${device.id}`, {
+      const res = await apiFetch(`/api/v1/devices/${device.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'OPERATING' }),

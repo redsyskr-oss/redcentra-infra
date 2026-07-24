@@ -1,16 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api';
 import { filterReadable, type UserInfo } from '@/store/useUserStore';
 
 export function useUser() {
     return useQuery({
         queryKey: ['user'],
         queryFn: async (): Promise<UserInfo> => {
-            const res = await fetch('/api/auth/me');
-            if (res.status === 401 || res.status === 403) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/login';
-                throw new Error('Session expired');
-            }
+            // 401(세션 만료) 처리는 apiFetch가 전역으로 담당한다.
+            const res = await apiFetch('/api/auth/me');
             if (!res.ok) {
                 throw new Error('Failed to fetch user');
             }

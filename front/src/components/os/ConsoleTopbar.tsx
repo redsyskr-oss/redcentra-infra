@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import type { UserInfo } from '@/store/useUserStore';
+import { apiFetch } from '@/lib/api';
 
 interface Props {
   user?: UserInfo;
@@ -38,7 +39,7 @@ export default function ConsoleTopbar({ user, collapsed, onToggleSidebar }: Prop
   }, []);
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await apiFetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
     router.refresh();
   }

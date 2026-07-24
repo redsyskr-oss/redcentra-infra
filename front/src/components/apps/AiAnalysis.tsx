@@ -5,6 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/common/DataTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** AI 분석 현황 — UI-AI-001 (신규 제안: 배치 결과 조회 전용, 실시간 추론 없음) */
 interface BatchHistory {
@@ -39,7 +40,7 @@ export default function AiAnalysis({ data: _data }: { data?: unknown }) {
   const { data: batches = [] } = useQuery<BatchHistory[]>({
     queryKey: ['aiBatchHistory'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/aiBatchHistory');
+      const res = await apiFetch('/api/v1/aiBatchHistory');
       if (!res.ok) return [];
       return res.json();
     },
@@ -48,7 +49,7 @@ export default function AiAnalysis({ data: _data }: { data?: unknown }) {
   const { data: results = [] } = useQuery<AiResult[]>({
     queryKey: ['aiResults'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/aiResults');
+      const res = await apiFetch('/api/v1/aiResults');
       if (!res.ok) return [];
       return res.json();
     },

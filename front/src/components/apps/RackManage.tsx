@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /**
  * 랙 상세 · 실장도 — UI-RACK-001
@@ -147,7 +148,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const { data: racks = [], isLoading } = useQuery<Rack[]>({
     queryKey: ['racks'],
     queryFn: async () => {
-      const [rackRes, deviceRes] = await Promise.all([fetch('/api/v1/racks'), fetch('/api/v1/devices')]);
+      const [rackRes, deviceRes] = await Promise.all([apiFetch('/api/v1/racks'), apiFetch('/api/v1/devices')]);
       if (!rackRes.ok) return [];
       const rackRows: Rack[] = await rackRes.json();
       if (!deviceRes.ok) return rackRows;
@@ -162,7 +163,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const { data: rooms = [] } = useQuery<Room[]>({
     queryKey: ['rooms-flat'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/rooms?page=1&size=100');
+      const res = await apiFetch('/api/v1/rooms?page=1&size=100');
       if (!res.ok) return [];
       const json = await res.json();
       return json.content ?? [];
@@ -172,7 +173,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const { data: unracked = [] } = useQuery<UnrackedDevice[]>({
     queryKey: ['devices-unracked'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/devices');
+      const res = await apiFetch('/api/v1/devices');
       if (!res.ok) return [];
       const all: (UnrackedDevice & { rackId: number | null })[] = await res.json();
       return all.filter((d) => d.rackId === null && d.lifecycleStatus !== 'RECEIVED');
@@ -182,7 +183,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const { data: backups = [] } = useQuery<Backup[]>({
     queryKey: ['backups-flat'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/backups');
+      const res = await apiFetch('/api/v1/backups');
       if (!res.ok) return [];
       return res.json();
     },
@@ -191,7 +192,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const { data: portTemplates = [] } = useQuery<PortTemplate[]>({
     queryKey: ['portTemplates'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/portTemplates');
+      const res = await apiFetch('/api/v1/portTemplates');
       if (!res.ok) return [];
       return res.json();
     },
@@ -200,7 +201,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const { data: softwareLicenses = [] } = useQuery<SoftwareLicense[]>({
     queryKey: ['swLicenses'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/swLicenses');
+      const res = await apiFetch('/api/v1/swLicenses');
       if (!res.ok) return [];
       return res.json();
     },
@@ -209,7 +210,7 @@ export default function RackManage({ data }: { data?: unknown }) {
   const { data: licenseAssignments = [] } = useQuery<LicenseAssignment[]>({
     queryKey: ['licenseAssignments'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/licenseAssignments');
+      const res = await apiFetch('/api/v1/licenseAssignments');
       if (!res.ok) return [];
       return res.json();
     },
@@ -220,7 +221,7 @@ export default function RackManage({ data }: { data?: unknown }) {
 
   const assignMutation = useMutation({
     mutationFn: async (placement: PlacementInput) => {
-      const res = await fetch(`/api/v1/devices/${placement.deviceId}/placement`, {
+      const res = await apiFetch(`/api/v1/devices/${placement.deviceId}/placement`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -236,7 +237,7 @@ export default function RackManage({ data }: { data?: unknown }) {
       if (!res.ok) throw new Error('장비 배치에 실패했습니다.');
       const device = await res.json();
       for (const license of placement.licenses) {
-        const licenseRes = await fetch('/api/v1/licenseAssignments', {
+        const licenseRes = await apiFetch('/api/v1/licenseAssignments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -269,7 +270,7 @@ export default function RackManage({ data }: { data?: unknown }) {
 
   const unassignMutation = useMutation({
     mutationFn: async (deviceId: number) => {
-      const res = await fetch(`/api/v1/devices/${deviceId}/placement`, {
+      const res = await apiFetch(`/api/v1/devices/${deviceId}/placement`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rackId: null, uPosition: null, lifecycleStatus: 'INSPECTION_PASSED', installedAt: null, status: 'STANDBY' }),
@@ -288,7 +289,7 @@ export default function RackManage({ data }: { data?: unknown }) {
 
   const editMutation = useMutation({
     mutationFn: async (patch: Partial<Rack>) => {
-      const res = await fetch(`/api/v1/racks/${selectedRackId}`, {
+      const res = await apiFetch(`/api/v1/racks/${selectedRackId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -527,7 +528,7 @@ function RackExcelImportDialog({ open, onOpenChange, rack, onSuccess }: { open: 
 
   const importMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/v1/racks/${rack.id}/devices/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ devices: rows.map(({ errors: _errors, rowNumber: _rowNumber, ...device }) => device) }) });
+      const res = await apiFetch(`/api/v1/racks/${rack.id}/devices/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ devices: rows.map(({ errors: _errors, rowNumber: _rowNumber, ...device }) => device) }) });
       const data = await res.json(); if (!res.ok) throw new Error(data.error ?? '일괄 등록에 실패했습니다.'); return data;
     },
     onSuccess: () => { onSuccess(); setRows([]); setFileName(''); onOpenChange(false); },

@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { apiFetch } from '@/lib/api';
 
 /** 공지사항 — UI-COM-003 */
 interface Notice {
@@ -35,7 +36,7 @@ export default function Notice({ data: _data }: { data?: unknown }) {
   const { data: notices = [] } = useQuery<Notice[]>({
     queryKey: ['notices'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/notices');
+      const res = await apiFetch('/api/v1/notices');
       if (!res.ok) return [];
       return res.json();
     },
@@ -43,7 +44,7 @@ export default function Notice({ data: _data }: { data?: unknown }) {
 
   const createMutation = useMutation({
     mutationFn: async (payload: Partial<Notice>) => {
-      const res = await fetch('/api/v1/notices', {
+      const res = await apiFetch('/api/v1/notices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, writerName: '김관리', createdAt: new Date().toISOString() }),
@@ -59,7 +60,7 @@ export default function Notice({ data: _data }: { data?: unknown }) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/v1/notices/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/v1/notices/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('삭제 실패');
     },
     onSuccess: () => {

@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Box, ExternalLink, Loader2, Server } from 'lucide-react';
 import { useTabStore } from '@/store/useTabStore';
 import RoomView from './RoomView';
+import { apiFetch } from '@/lib/api';
 
 interface Room {
   id: number;
@@ -26,7 +27,7 @@ export default function DashboardRoomWidget() {
   const { data, isLoading } = useQuery<RoomResponse>({
     queryKey: ['rooms'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/rooms?page=1&size=100');
+      const res = await apiFetch('/api/v1/rooms?page=1&size=100');
       if (!res.ok) throw new Error('서버실 목록을 불러오지 못했습니다.');
       return res.json();
     },

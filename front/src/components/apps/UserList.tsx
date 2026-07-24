@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useUser } from '@/hooks/useUser';
 import { useTabStore } from '@/store/useTabStore';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 계정 · 권한 관리 — UI-SYS-001 */
 type UserRole = 'SYSTEM_ADMIN' | 'RESIDENT_PL' | 'RESIDENT_ENGINEER' | 'PARTNER' | 'MANAGER' | 'USER' | 'VIEWER' | 'GUEST';
@@ -93,7 +94,7 @@ export default function UserList() {
   const { data: users = [], isLoading } = useQuery<ApiUser[]>({
     queryKey: ['users'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/users');
+      const res = await apiFetch('/api/v1/users');
       if (!res.ok) throw new Error('Failed to fetch users');
       return res.json();
     },
@@ -102,7 +103,7 @@ export default function UserList() {
   const { data: approvals = [] } = useQuery<Approval[]>({
     queryKey: ['userApprovals-full'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/userApprovals');
+      const res = await apiFetch('/api/v1/userApprovals');
       if (!res.ok) return [];
       return res.json();
     },
@@ -336,7 +337,7 @@ function RoleManageView({ users }: { users: ApiUser[] }) {
   const { data: roles = [], isLoading } = useQuery<ApiRole[]>({
     queryKey: ['roles'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/roles');
+      const res = await apiFetch('/api/v1/roles');
       if (!res.ok) return [];
       return res.json();
     },
@@ -360,7 +361,7 @@ function RoleManageView({ users }: { users: ApiUser[] }) {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!selectedRole) return;
-      const res = await fetch(`/api/v1/roles/${selectedRole.id}`, {
+      const res = await apiFetch(`/api/v1/roles/${selectedRole.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ label, roleDesc: desc }),
@@ -488,7 +489,7 @@ function SecuritySettingsView() {
   const { data, isLoading } = useQuery<SecuritySettings>({
     queryKey: ['securitySettings'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/securitySettings');
+      const res = await apiFetch('/api/v1/securitySettings');
       if (!res.ok) throw new Error('불러오기 실패');
       return res.json();
     },
@@ -499,7 +500,7 @@ function SecuritySettingsView() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!form) return;
-      const res = await fetch('/api/v1/securitySettings', {
+      const res = await apiFetch('/api/v1/securitySettings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -639,7 +640,7 @@ function DetailPanel({
 
   const patchUser = useMutation({
     mutationFn: async (patch: Partial<ApiUser>) => {
-      const res = await fetch(`/api/v1/users/${user.id}`, {
+      const res = await apiFetch(`/api/v1/users/${user.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -652,7 +653,7 @@ function DetailPanel({
 
   const deleteUser = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/v1/users/${user.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/v1/users/${user.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('삭제 실패');
     },
     onSuccess: () => { invalidateAll(); onClose(); },
@@ -660,7 +661,7 @@ function DetailPanel({
 
   const resetPassword = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/auth/admin-reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetUserId: user.id }) });
+      const res = await apiFetch('/api/auth/admin-reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetUserId: user.id }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? '비밀번호 초기화에 실패했습니다.');
       return data.temporaryPassword as string;
@@ -671,7 +672,7 @@ function DetailPanel({
   const decideMutation = useMutation({
     mutationFn: async ({ approve }: { approve: boolean }) => {
       if (!approval) return;
-      await fetch(`/api/v1/userApprovals/${approval.id}`, {
+      await apiFetch(`/api/v1/userApprovals/${approval.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -683,20 +684,20 @@ function DetailPanel({
       });
 
       if (approval.requestType === 'USER_REGISTRATION') {
-        await fetch(`/api/v1/users/${user.id}`, {
+        await apiFetch(`/api/v1/users/${user.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: approve ? 'ACTIVE' : 'REJECTED', role: approve ? pendingRole : user.role }),
         });
         if (approve && approveIp.trim()) {
-          await fetch('/api/v1/accessIps', {
+          await apiFetch('/api/v1/accessIps', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ memberId: user.id, ipAddress: approveIp.trim(), description: `${user.name} 승인 시 등록` }),
           });
         }
       } else if (approval.requestType === 'ACCOUNT_UNLOCK') {
-        await fetch(`/api/v1/users/${user.id}`, {
+        await apiFetch(`/api/v1/users/${user.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: approve ? 'ACTIVE' : 'LOCKED' }),
@@ -907,14 +908,14 @@ function EditUserModal({ user, onClose }: { user: ApiUser; onClose: () => void }
   const { data: companies = [] } = useQuery<CompanyOption[]>({
     queryKey: ['companies-admin'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/companies');
+      const res = await apiFetch('/api/v1/companies');
       return res.ok ? res.json() : [];
     },
   });
 
   const updateUser = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/v1/users/${user.id}`, {
+      const res = await apiFetch(`/api/v1/users/${user.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1005,7 +1006,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
   const { data: companies = [] } = useQuery<CompanyOption[]>({
     queryKey: ['companies-admin'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/companies');
+      const res = await apiFetch('/api/v1/companies');
       return res.ok ? res.json() : [];
     },
   });
@@ -1017,7 +1018,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
       let resolvedCompanyId: number | null = companyId && companyId !== 'NEW' ? Number(companyId) : null;
       if (memberType === 'PARTNER' && companyId === 'NEW') {
         if (!newCompanyName.trim()) throw new Error('회사명을 입력해 주세요.');
-        const companyRes = await fetch('/api/v1/companies', {
+        const companyRes = await apiFetch('/api/v1/companies', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ companyName: newCompanyName.trim(), businessNumber: businessNumber.trim() || null, phone: companyPhone.trim() || null }),
@@ -1026,7 +1027,7 @@ function AddUserModal({ onClose }: { onClose: () => void }) {
         const company = await companyRes.json();
         resolvedCompanyId = Number(company.id);
       }
-      const res = await fetch('/api/v1/users', {
+      const res = await apiFetch('/api/v1/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

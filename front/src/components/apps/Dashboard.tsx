@@ -14,6 +14,7 @@ import { AlertTriangle, Check, Droplets, Server, Settings2, Zap } from 'lucide-r
 import { cn } from '@/lib/utils';
 import DashboardNetworkWidget from './DashboardNetworkWidget';
 import DashboardRoomWidget from './DashboardRoomWidget';
+import { apiFetch } from '@/lib/api';
 
 interface WidgetDef { id: string; title: string; }
 const WIDGET_DEFS: WidgetDef[] = [
@@ -115,7 +116,7 @@ function ServerResourcePanel() {
   const { data: perfs = [] } = useQuery<AgentPerf[]>({
     queryKey: ['agentPerformance'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/agentPerformance');
+      const res = await apiFetch('/api/v1/agentPerformance');
       if (!res.ok) return [];
       return res.json();
     },
@@ -161,7 +162,7 @@ function NetworkResourcePanel() {
   const { data: traffic = [] } = useQuery<TrafficPoint[]>({
     queryKey: ['networkTraffic'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/networkTraffic');
+      const res = await apiFetch('/api/v1/networkTraffic');
       if (!res.ok) return [];
       return res.json();
     },
@@ -182,7 +183,7 @@ function FacilityPanel() {
   const { data: ups = [] } = useQuery<UpsRow[]>({
     queryKey: ['upsStatus'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/upsStatus');
+      const res = await apiFetch('/api/v1/upsStatus');
       if (!res.ok) return [];
       return res.json();
     },
@@ -190,7 +191,7 @@ function FacilityPanel() {
   const { data: envSensors = [] } = useQuery<EnvSensor[]>({
     queryKey: ['envSensors'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/envSensors');
+      const res = await apiFetch('/api/v1/envSensors');
       if (!res.ok) return [];
       return res.json();
     },
@@ -198,7 +199,7 @@ function FacilityPanel() {
   const { data: leaks = [] } = useQuery<LeakSensor[]>({
     queryKey: ['leakSensors'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/leakSensors');
+      const res = await apiFetch('/api/v1/leakSensors');
       if (!res.ok) return [];
       return res.json();
     },
@@ -298,7 +299,7 @@ export default function Dashboard({ data: _data }: { data?: unknown }) {
   const { data: tasks = [] } = useQuery<MaintenanceTask[]>({
     queryKey: ['maintenanceTasks'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/maintenanceTasks');
+      const res = await apiFetch('/api/v1/maintenanceTasks');
       if (!res.ok) return [];
       return res.json();
     },
@@ -306,7 +307,7 @@ export default function Dashboard({ data: _data }: { data?: unknown }) {
   const { data: logs = [] } = useQuery<InterfaceLog[]>({
     queryKey: ['interfaceLogs'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/interfaceLogs');
+      const res = await apiFetch('/api/v1/interfaceLogs');
       if (!res.ok) return [];
       return res.json();
     },

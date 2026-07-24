@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 백업관리 — UI-BKP-001(구성 목록) · UI-BKP-002(주간 스케줄 캘린더) */
 interface BackupRow {
@@ -78,7 +79,7 @@ export default function BackupSchedule({ data }: { data?: { initialTab?: TabId }
   const { data: rows = [] } = useQuery<BackupRow[]>({
     queryKey: ['backups'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/backups');
+      const res = await apiFetch('/api/v1/backups');
       if (!res.ok) return [];
       return res.json();
     },
@@ -87,7 +88,7 @@ export default function BackupSchedule({ data }: { data?: { initialTab?: TabId }
   const { data: schedules = [] } = useQuery<BackupScheduleRow[]>({
     queryKey: ['backupSchedules'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/backupSchedules');
+      const res = await apiFetch('/api/v1/backupSchedules');
       if (!res.ok) return [];
       return res.json();
     },

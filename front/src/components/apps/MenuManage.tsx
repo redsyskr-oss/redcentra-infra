@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /**
  * 메뉴 관리 — SYS_MENU
@@ -104,7 +105,7 @@ export default function MenuManage({ data: _data }: { data?: unknown }) {
   const { data: menus = [] } = useQuery<Menu[]>({
     queryKey: ['menus-manage'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/menus');
+      const res = await apiFetch('/api/v1/menus');
       if (!res.ok) return [];
       return res.json();
     },
@@ -115,7 +116,7 @@ export default function MenuManage({ data: _data }: { data?: unknown }) {
   const createMutation = useMutation({
     mutationFn: async (payload: Omit<Menu, 'id'>) => {
       const nextId = Math.max(0, ...menus.map((m) => m.id)) + 1;
-      const res = await fetch('/api/v1/menus', {
+      const res = await apiFetch('/api/v1/menus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: nextId, ...payload }),
@@ -128,7 +129,7 @@ export default function MenuManage({ data: _data }: { data?: unknown }) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, patch }: { id: number; patch: Partial<Menu> }) => {
-      const res = await fetch(`/api/v1/menus/${id}`, {
+      const res = await apiFetch(`/api/v1/menus/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -141,7 +142,7 @@ export default function MenuManage({ data: _data }: { data?: unknown }) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/v1/menus/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/v1/menus/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('삭제에 실패했습니다.');
     },
     onSuccess: invalidate,

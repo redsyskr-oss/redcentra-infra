@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 반출입 관리 — UI-IOM-001 (신청 → 승인 → 완료/반려) */
 interface CarryInOutRow {
@@ -44,7 +45,7 @@ export default function CarryInOut({ data: _data }: { data?: unknown }) {
   const { data: rows = [] } = useQuery<CarryInOutRow[]>({
     queryKey: ['carryInOuts'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/carryInOuts');
+      const res = await apiFetch('/api/v1/carryInOuts');
       if (!res.ok) return [];
       return res.json();
     },
@@ -53,7 +54,7 @@ export default function CarryInOut({ data: _data }: { data?: unknown }) {
   const decideMutation = useMutation({
     mutationFn: async ({ id, approve }: { id: number; approve: boolean }) => {
       const note = window.prompt(approve ? '승인 메모(선택)' : '반려 사유') ?? '';
-      const res = await fetch(`/api/v1/carryInOuts/${id}`, {
+      const res = await apiFetch(`/api/v1/carryInOuts/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: approve ? 'APPROVED' : 'REJECTED', approverName: '김관리', decisionNote: note }),
@@ -66,7 +67,7 @@ export default function CarryInOut({ data: _data }: { data?: unknown }) {
 
   const completeMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/v1/carryInOuts/${id}`, {
+      const res = await apiFetch(`/api/v1/carryInOuts/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'DONE' }),
@@ -79,7 +80,7 @@ export default function CarryInOut({ data: _data }: { data?: unknown }) {
 
   const createMutation = useMutation({
     mutationFn: async (payload: Partial<CarryInOutRow>) => {
-      const res = await fetch('/api/v1/carryInOuts', {
+      const res = await apiFetch('/api/v1/carryInOuts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, status: 'REQUESTED', requesterName: '김관리', approverName: null, decisionNote: null, createdAt: new Date().toISOString() }),

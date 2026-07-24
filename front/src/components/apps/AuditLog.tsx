@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 interface AccessIp {
   id: number;
@@ -56,7 +57,7 @@ export default function AuditLog({ data: _data }: { data?: unknown }) {
   const { data: ips = [] } = useQuery<AccessIp[]>({
     queryKey: ['accessIps'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/accessIps');
+      const res = await apiFetch('/api/v1/accessIps');
       if (!res.ok) return [];
       return res.json();
     },
@@ -65,7 +66,7 @@ export default function AuditLog({ data: _data }: { data?: unknown }) {
   const { data: history = [] } = useQuery<AccessHistory[]>({
     queryKey: ['accessHistory'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/accessHistory');
+      const res = await apiFetch('/api/v1/accessHistory');
       if (!res.ok) return [];
       return res.json();
     },

@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 /** 예비부품 · 자재 — UI-MTN-002 */
 interface SparePartRow {
@@ -35,7 +36,7 @@ export default function SparePart({ data: _data }: { data?: unknown }) {
   const { data: parts = [] } = useQuery<SparePartRow[]>({
     queryKey: ['spareParts'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/spareParts');
+      const res = await apiFetch('/api/v1/spareParts');
       if (!res.ok) return [];
       return res.json();
     },
@@ -44,12 +45,12 @@ export default function SparePart({ data: _data }: { data?: unknown }) {
   const stockMutation = useMutation({
     mutationFn: async ({ part, inOut, qty, reason }: { part: SparePartRow; inOut: 'IN' | 'OUT'; qty: number; reason: string }) => {
       const nextQty = inOut === 'IN' ? part.stockQty + qty : Math.max(0, part.stockQty - qty);
-      await fetch(`/api/v1/spareParts/${part.id}`, {
+      await apiFetch(`/api/v1/spareParts/${part.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stockQty: nextQty }),
       });
-      await fetch('/api/v1/partStockHistory', {
+      await apiFetch('/api/v1/partStockHistory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ partId: part.id, inOut, qty, reason, createdBy: 1, createdAt: new Date().toISOString() }),
