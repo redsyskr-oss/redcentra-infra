@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 9000
+    },
+    {
+      "name": "mock-server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "server"],
+      "port": 4000
+    }
+  ]
+}

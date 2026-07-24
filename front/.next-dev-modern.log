@@ -1,0 +1,14 @@
+Already up to date
+Done in 335ms using pnpm v11.10.0
+▲ Next.js 16.1.5 (Turbopack)
+- Local:         http://localhost:9000
+- Network:       http://172.30.32.1:9000
+- Environments: .env.local, .env
+
+✓ Starting...
+✓ Ready in 895ms
+○ Compiling / ...
+ GET / 200 in 5.2s (compile: 4.9s, proxy.ts: 72ms, render: 195ms)
+ GET /api/auth/me 500 in 755ms (compile: 722ms, render: 33ms)
+ GET /login 200 in 96ms (compile: 33ms, render: 63ms)
+[ELIFECYCLE] Command failed with exit code 1.
