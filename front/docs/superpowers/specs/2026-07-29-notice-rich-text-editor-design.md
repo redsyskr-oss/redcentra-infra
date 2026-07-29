@@ -63,6 +63,28 @@ CKEditor 5는 완성도와 접근성이 우수하지만 GPL 2+ 또는 상용 라
 
 기존 `src/components/ui`의 shadcn/ui 파일은 직접 수정하지 않는다.
 
+## 백엔드 구조
+
+Spring Boot 백엔드 `D:\redcentra\backend`도 함께 변경한다.
+
+- `NoticeController`
+  - 기존 목록·상세 조회 유지
+  - 인증 사용자 기반 등록, 수정, 삭제 API 추가
+- `NoticeService`
+  - 공지 CRUD 트랜잭션
+  - 작성자 조회
+  - `FileStorage`에서 `refType=NOTICE`, `refId=noticeId`인 첨부 조회
+- 공지 요청 DTO
+  - 제목, HTML 본문, 고정 여부, 게시 시작일·종료일 검증
+- 공지 응답 DTO
+  - 상세 응답에 범용 `FileStorage` 기반 `fileId`, 파일명, MIME, 크기 포함
+- `FileStorage`
+  - `NOTICE_ATTACHMENT` 카테고리 추가
+- `FileStorageService`
+  - 공지 첨부 조회·삭제 시 참조 정보 검증
+
+기존 `NoticeFile` 엔티티는 현재 범용 파일 업로드 흐름과 분리되어 있으므로 새 기능에서 사용하지 않는다. 데이터베이스 파괴적 마이그레이션이나 기존 테이블 삭제는 하지 않는다.
+
 ## 데이터 흐름
 
 ### 등록
@@ -93,7 +115,7 @@ CKEditor 5는 완성도와 접근성이 우수하지만 GPL 2+ 또는 상용 라
 
 공지 본문은 렌더링 전에 정제한다. 첨부파일 다운로드는 `fileId`로 presigned URL을 발급받은 뒤 브라우저 다운로드를 시작한다. 본문 이미지는 만료되는 presigned URL을 HTML에 저장하지 않고 동일 출처의 안정적인 애플리케이션 URL을 저장한다.
 
-## 백엔드 API 계약
+## 백엔드 API
 
 현재 프런트에는 다음 파일 API 계약이 존재한다.
 
@@ -102,14 +124,17 @@ CKEditor 5는 완성도와 접근성이 우수하지만 GPL 2+ 또는 상용 라
 - `POST /api/v1/files/confirm`
 - `GET /api/v1/files/{fileId}/presigned-download`
 
-구현 중 백엔드에서 다음 계약의 실제 제공 여부를 확인한다.
+다음 공지 계약을 백엔드에 구현한다.
 
-- 공지 수정 `PUT` 또는 `PATCH /api/v1/notices/{noticeId}`
-- 공지별 첨부 조회
-- 첨부 삭제
-- 인증을 유지하면서 이미지를 응답하거나 presigned URL로 리다이렉트하는 안정적인 동일 출처 이미지 경로
+- `POST /api/v1/notices`
+- `PUT /api/v1/notices/{noticeId}`
+- `DELETE /api/v1/notices/{noticeId}`
+- `GET /api/v1/notices/{noticeId}` 상세 응답에 첨부 목록 포함
+- `GET /api/v1/notices/{noticeId}/files` 공지 첨부 목록
 
-없는 계약은 임의로 정상 동작한다고 가정하지 않는다. 프런트 타입과 호출 경계를 구현하되, 필요한 백엔드 API 명세와 미지원 상태를 결과에 명시한다.
+파일 업로드는 `refType=NOTICE`, `refId=noticeId`, `category=NOTICE_ATTACHMENT`를 사용한다. 첨부 삭제는 기존 `DELETE /api/v1/files/{fileId}`를 사용하되 공지 화면은 해당 공지에 연결된 `fileId`만 전달한다.
+
+본문 이미지도 `NOTICE_ATTACHMENT`로 저장하고 HTML에는 `/api/v1/files/{fileId}/presigned-download`를 직접 이미지 주소로 넣지 않는다. 프런트의 동일 출처 이미지 라우트가 presigned URL을 발급받아 리다이렉트하며, DB에는 `/api/notice-images/{fileId}` 형태의 안정적인 주소를 저장한다.
 
 ## HTML 보안
 
@@ -191,3 +216,5 @@ CKEditor 5는 완성도와 접근성이 우수하지만 GPL 2+ 또는 상용 라
 - 핵심 보안 및 파일 검증 테스트가 통과한다.
 - lint와 프로덕션 빌드가 통과한다.
 - 백엔드 미지원 API가 있으면 구현 결과에 정확히 명시한다.
+- Spring Boot 공지 CRUD와 범용 파일 저장소 기반 첨부 조회가 동작한다.
+- 백엔드 `api-server` 테스트와 전체 Gradle 테스트가 통과한다.
